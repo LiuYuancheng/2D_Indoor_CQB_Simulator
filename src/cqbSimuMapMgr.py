@@ -26,9 +26,12 @@ class AgentTarget(object):
         self.orgPos = pos
         self.crtPos = pos
         self.tType = tType
-        self.routPts = []
+        self.routePts = [self.orgPos,]
         self.trajectory = []
         self.selected = False
+        self.moveFlg = True
+        self.moveTgtIdx=0 # the next way point need to move to in the route
+        self.moveSpeed = 10 # the speed to move to the next way point
 
     def getID(self):
         return self.id
@@ -48,7 +51,31 @@ class AgentTarget(object):
     def setSelected(self, sel):
         self.selected = sel
 
+    def addWayPt(self, pos):
+        self.routePts.append(pos)
 
+    def getRoutePts(self):
+        return self.routePts
+
+    def updateCrtPos(self):
+        """ Update the current train positions on the map. This function will be 
+            called periodicly.
+        """
+        if not self.moveFlg: return
+
+        nextPt = self.routePts[self.moveTgtIdx]
+        self.crtPos
+        dist = math.sqrt((self.crtPos[0] - nextPt[0])**2 + (self.crtPos[1] - nextPt[1])**2)
+        if dist <= self.moveSpeed:
+            self.crtPos[0], self.crtPos[1] = nextPt[0], nextPt[1]
+            if self.moveTgtIdx < len(self.routePts)-1: 
+                self.moveTgtIdx +=1
+            else:
+                print("reach end point")
+                self.moveFlg = False
+        else:
+            self.crtPos[0] += int((nextPt[0] - self.crtPos[0])*1.0/dist * self.moveSpeed)
+            self.crtPos[1] += int((nextPt[1] - self.crtPos[1])*1.0/dist * self.moveSpeed)
 
 #--AgentTarget-----------------------------------------------------------------
     def checkNear(self, posX, posY, threshold):
@@ -90,3 +117,7 @@ class MapMgr(object):
             enemyObj.setSelected(False)
             if enemyObj.checkNear(posX, posY, threshold):
                 enemyObj.setSelected(True)
+
+    def periodic(self):
+        if self.robot: 
+            self.robot.updateCrtPos()

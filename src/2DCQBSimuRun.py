@@ -82,7 +82,6 @@ class UIFrame(wx.Frame):
         menubar.Append(helpMenu, '&About')
         self.SetMenuBar(menubar)
 
-
 #--UIFrame---------------------------------------------------------------------
     def _buildUISizer(self):
         """ Build the main UI Sizer. """
@@ -113,6 +112,7 @@ class UIFrame(wx.Frame):
         if (not self.updateLock) and now - self.lastPeriodicTime >= gv.gUpdateRate:
             print("main frame update at %s" % str(now))
             self.lastPeriodicTime = now
+            gv.iMapMgr.periodic()
             gv.iRWMapPnl.updateDisplay()
 
 #-----------------------------------------------------------------------------

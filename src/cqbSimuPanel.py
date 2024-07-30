@@ -110,6 +110,8 @@ class PanelEditorMap(wx.Panel):
         self.Bind(wx.EVT_RIGHT_DOWN, self.onShowPopup)
         #self.Bind(wx.EVT_CONTEXT_MENU, self.onShowPopup)
 
+        self.addWaypt = True
+
         self.SetDoubleBuffered(True)
 
     def onPaint(self, evt):
@@ -146,13 +148,18 @@ class PanelEditorMap(wx.Panel):
             
             if robotObj:
                 pos = robotObj.getOrgPos()
-            
                 if robotObj.getSelected():
                     dc.SetBrush(wx.Brush(wx.Colour("BLUE")))
                     dc.DrawCircle(pos[0], pos[1], 12)
-
                 dc.SetBrush(wx.Brush(wx.Colour(67, 138, 85)))
                 dc.DrawCircle(pos[0], pos[1], 8)
+                # draw the waypt
+                waypts = robotObj.getRoutePts()
+                if len(waypts)>1:
+                    dc.SetPen(wx.Pen(wx.Colour(67, 138, 85), 2, style=wx.PENSTYLE_LONG_DASH))
+                    dc.DrawLines(waypts)
+
+
             # drow the enemy
             dc.SetBrush(wx.Brush(wx.Colour("RED")))
             enemies = gv.iMapMgr.getEnemy()
@@ -184,6 +191,10 @@ class PanelEditorMap(wx.Panel):
             print(pos)
             gv.iMapMgr.checkSelected(pos[0], pos[1])
         
+        robot = gv.iMapMgr.getRobot()
+        if self.addWaypt:
+            robot.addWayPt(pos)
+
         self.updateDisplay()
         
 #---PanelMap--------------------------------------------------------------------------
