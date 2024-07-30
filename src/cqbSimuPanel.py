@@ -46,8 +46,14 @@ class PanelRealworldMap(wx.Panel):
             dc.SetBrush(wx.Brush(wx.Colour(67, 138, 85)))
 
             if robotObj:
+                trajectory = robotObj.getTrajectory()
+                print(trajectory)
+                dc.SetPen(wx.Pen(wx.Colour(67, 138, 85), 2, style=wx.PENSTYLE_LONG_DASH))
+                dc.DrawLines(trajectory)
                 pos = robotObj.getCrtPos()
                 dc.DrawCircle(pos[0], pos[1], 8)
+
+
             # drow the enemy
             dc.SetBrush(wx.Brush(wx.Colour("RED")))
             enemies = gv.iMapMgr.getEnemy()
@@ -200,7 +206,8 @@ class PanelEditorMap(wx.Panel):
 #---PanelMap--------------------------------------------------------------------------
     def onShowPopup(self, event):
         pos = event.GetPosition()
-        self.clickPos = pos
+        wxPointTuple = pos.Get()
+        self.clickPos = [wxPointTuple[0], wxPointTuple[1]]
         self.PopupMenu(self.popupmenu, pos)
 
     def onPopupItemSelected(self, event):

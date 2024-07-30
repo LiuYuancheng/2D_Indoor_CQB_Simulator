@@ -101,8 +101,12 @@ class UIFrame(wx.Frame):
         hbox1.AddSpacer(5)
         gv.iEDMapPnl = pl.PanelEditorMap(self)
         hbox1.Add(gv.iEDMapPnl, flag=flagsR, border=2)
-
         mSizer.Add(hbox1, flag=flagsR, border=2)
+
+        self.collisionCB = wx.CheckBox(self, label = 'start to move')
+        self.collisionCB.Bind(wx.EVT_CHECKBOX, self.onMove)
+        mSizer.Add(self.collisionCB, flag=wx.LEFT, border=2)
+
         return mSizer
 
 #--UIFrame---------------------------------------------------------------------
@@ -119,6 +123,13 @@ class UIFrame(wx.Frame):
     def onHelp(self, event):
         """ Pop-up the Help information window. """
         wx.MessageBox(HELP_MSG, 'Help', wx.OK)
+
+    def onMove(self, event):
+        """ Pop-up the Help information window. """
+        mvFlg = self.collisionCB.IsChecked()
+        print("set to move flag: %s" %str(mvFlg))
+        gv.iMapMgr.startMove(mvFlg)
+
 
 #-----------------------------------------------------------------------------
     def onLoadScenario(self, event):

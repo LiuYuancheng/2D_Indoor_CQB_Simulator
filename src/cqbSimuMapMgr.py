@@ -29,7 +29,7 @@ class AgentTarget(object):
         self.routePts = [self.orgPos,]
         self.trajectory = []
         self.selected = False
-        self.moveFlg = True
+        self.moveFlg = False
         self.moveTgtIdx=0 # the next way point need to move to in the route
         self.moveSpeed = 10 # the speed to move to the next way point
 
@@ -47,9 +47,15 @@ class AgentTarget(object):
 
     def getSelected(self):
         return self.selected
-    
+
+    def getTrajectory(self):
+        return self.trajectory
+
     def setSelected(self, sel):
         self.selected = sel
+
+    def setMoveFlag(self, moveFlg):
+        self.moveFlg = moveFlg
 
     def addWayPt(self, pos):
         self.routePts.append(pos)
@@ -62,9 +68,7 @@ class AgentTarget(object):
             called periodicly.
         """
         if not self.moveFlg: return
-
         nextPt = self.routePts[self.moveTgtIdx]
-        self.crtPos
         dist = math.sqrt((self.crtPos[0] - nextPt[0])**2 + (self.crtPos[1] - nextPt[1])**2)
         if dist <= self.moveSpeed:
             self.crtPos[0], self.crtPos[1] = nextPt[0], nextPt[1]
@@ -76,6 +80,8 @@ class AgentTarget(object):
         else:
             self.crtPos[0] += int((nextPt[0] - self.crtPos[0])*1.0/dist * self.moveSpeed)
             self.crtPos[1] += int((nextPt[1] - self.crtPos[1])*1.0/dist * self.moveSpeed)
+            self.trajectory.append(self.crtPos.copy())
+            print(self.trajectory)
 
 #--AgentTarget-----------------------------------------------------------------
     def checkNear(self, posX, posY, threshold):
@@ -121,3 +127,6 @@ class MapMgr(object):
     def periodic(self):
         if self.robot: 
             self.robot.updateCrtPos()
+
+    def startMove(self, moveFlag):
+        self.robot.setMoveFlag(moveFlag)

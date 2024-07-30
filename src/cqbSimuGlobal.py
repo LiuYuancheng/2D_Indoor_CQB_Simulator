@@ -63,7 +63,6 @@ gBluePrintBM = None
 gTranspPct = 70     # Windows transparent percentage.
 gUpdateRate = 1     # main frame update rate 1 sec.
 
-
 #-------<GLOBAL PARAMTERS>-----------------------------------------------------
 iMainFrame = None   # MainFrame.
 iRWMapPnl = None  # Image panel.
