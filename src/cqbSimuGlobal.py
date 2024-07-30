@@ -68,5 +68,6 @@ gUpdateRate = 1     # main frame update rate 1 sec.
 iMainFrame = None   # MainFrame.
 iRWMapPnl = None  # Image panel.
 iEDMapPnl = None   # Edit panel.
+iMapMgr = None
 iCtrlPanel = None   # control panel
 

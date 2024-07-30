@@ -29,11 +29,31 @@ class PanelRealworldMap(wx.Panel):
     def onPaint(self, evt):
         """ Draw the map on the panel."""
         dc = wx.PaintDC(self)
+        self.defaultPen = dc.GetPen()
         w, h = self.panelSize
         dc.SetBrush(wx.Brush(self.bgColor))
         dc.DrawRectangle(0, 0, w, h)
         if self.bgBmp is not None:
             dc.DrawBitmap(self._scaleBitmap(self.bgBmp, w, h), 0, 0)
+        self._drawItems(dc)
+
+    def _drawItems(self, dc):
+        dc.SetPen(self.defaultPen)
+        
+        if gv.iMapMgr:
+            # draw the robot Orignal Pos 
+            robotObj = gv.iMapMgr.getRobot()
+            dc.SetBrush(wx.Brush(wx.Colour(67, 138, 85)))
+
+            if robotObj:
+                pos = robotObj.getCrtPos()
+                dc.DrawCircle(pos[0], pos[1], 8)
+            # drow the enemy
+            dc.SetBrush(wx.Brush(wx.Colour("RED")))
+            enemies = gv.iMapMgr.getEnemy()
+            for enemyObj in enemies:
+                pos = enemyObj.getOrgPos()
+                dc.DrawCircle(pos[0], pos[1], 8)
 
 #--PanelImge--------------------------------------------------------------------
     def _scaleBitmap(self, bitmap, width, height):
@@ -60,6 +80,13 @@ class PanelRealworldMap(wx.Panel):
         self.Refresh(False)
         self.Update()
 
+#--PanelMap--------------------------------------------------------------------
+    def periodic(self , now):
+        """ periodicly call back to do needed calcualtion/panel update"""
+        # Call the onPaint to update the map display.
+        self.updateDisplay()
+
+
 
 
 class PanelEditorMap(wx.Panel):
@@ -71,20 +98,15 @@ class PanelEditorMap(wx.Panel):
         self.bgBmp = None
 
         self.clickPos = None 
-
-        self.robotPos = None
-
-
         self.Bind(wx.EVT_PAINT, self.onPaint)
+        self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
         self.Bind(wx.EVT_MOTION, self.onMouseMove)
 
         self.popupmenu = p = wx.Menu()
         self.platRobot = p.Append(-1, 'Plant A Robot')
         self.Bind(wx.EVT_MENU, self.onPopupItemSelected, self.platRobot)
-
         self.platEnemy = p.Append(-1, 'Plant A Enemy')
         self.Bind(wx.EVT_MENU, self.onPopupItemSelected, self.platEnemy)
-
         self.Bind(wx.EVT_RIGHT_DOWN, self.onShowPopup)
         #self.Bind(wx.EVT_CONTEXT_MENU, self.onShowPopup)
 
@@ -117,10 +139,30 @@ class PanelEditorMap(wx.Panel):
 
     def _drawItems(self, dc):
         dc.SetPen(self.defaultPen)
-        dc.SetBrush(wx.Brush(wx.Colour(67, 138, 85)))
-        if self.robotPos is not None:
-            x, y = self.robotPos
-            dc.DrawCircle(x, y, 8)
+        
+        if gv.iMapMgr:
+            # draw the robot Orignal Pos 
+            robotObj = gv.iMapMgr.getRobot()
+            
+            if robotObj:
+                pos = robotObj.getOrgPos()
+            
+                if robotObj.getSelected():
+                    dc.SetBrush(wx.Brush(wx.Colour("BLUE")))
+                    dc.DrawCircle(pos[0], pos[1], 12)
+
+                dc.SetBrush(wx.Brush(wx.Colour(67, 138, 85)))
+                dc.DrawCircle(pos[0], pos[1], 8)
+            # drow the enemy
+            dc.SetBrush(wx.Brush(wx.Colour("RED")))
+            enemies = gv.iMapMgr.getEnemy()
+            for enemyObj in enemies:
+                pos = enemyObj.getOrgPos()
+                if enemyObj.getSelected():                    
+                    dc.SetBrush(wx.Brush(wx.Colour("BLUE")))
+                    dc.DrawCircle(pos[0], pos[1], 12)
+                    dc.SetBrush(wx.Brush(wx.Colour("RED")))
+                dc.DrawCircle(pos[0], pos[1], 8)
 
 #--PanelImge--------------------------------------------------------------------
     def _scaleBitmap(self, bitmap, width, height):
@@ -134,8 +176,16 @@ class PanelEditorMap(wx.Panel):
 
     def onMouseMove(self, event):
         scrnPt = event.GetPosition()
-        print(scrnPt)
+        #print(scrnPt)
 
+    def onLeftDown(self, event):
+        pos = event.GetPosition()
+        if gv.iMapMgr: 
+            print(pos)
+            gv.iMapMgr.checkSelected(pos[0], pos[1])
+        
+        self.updateDisplay()
+        
 #---PanelMap--------------------------------------------------------------------------
     def onShowPopup(self, event):
         pos = event.GetPosition()
@@ -146,8 +196,9 @@ class PanelEditorMap(wx.Panel):
         item = self.popupmenu.FindItemById(event.GetId())
         text = item.GetItemLabel()
         if text == "Plant A Robot":
-            self.robotPos = self.clickPos
-    
+            if gv.iMapMgr: gv.iMapMgr.initRobot(self.clickPos)
+        elif text == "Plant A Enemy":
+            if gv.iMapMgr: gv.iMapMgr.addEnemy(self.clickPos)
         self.updateDisplay()
 
 #--PanelImge--------------------------------------------------------------------

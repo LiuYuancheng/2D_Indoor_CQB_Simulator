@@ -17,6 +17,7 @@ import sys
 import time
 import wx
 import cqbSimuGlobal as gv
+import cqbSimuMapMgr as mapMgr
 import cqbSimuPanel as pl
 
 FRAME_SIZE = (1800, 1030)
@@ -39,6 +40,9 @@ class UIFrame(wx.Frame):
         # No boader frame:
         #wx.Frame.__init__(self, parent, id, title, style=wx.MINIMIZE_BOX | wx.STAY_ON_TOP)
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
+
+        self._initGlobals()
+
         #self.SetTransparent(gv.gTranspPct*255//100)
         self._buildMenuBar()
 
@@ -53,6 +57,11 @@ class UIFrame(wx.Frame):
         self.timer.Start(PERIODIC)  # every 500 ms
         self.Bind(wx.EVT_CLOSE, self.onClose)
         gv.gDebugPrint("Metro-System real world main frame inited.", logType=gv.LOG_INFO)
+
+
+    def _initGlobals(self):
+        """ Init the global parameters. """
+        gv.iMapMgr = mapMgr.MapMgr()
 
 #--UIFrame---------------------------------------------------------------------
     def _buildMenuBar(self):
@@ -104,6 +113,7 @@ class UIFrame(wx.Frame):
         if (not self.updateLock) and now - self.lastPeriodicTime >= gv.gUpdateRate:
             print("main frame update at %s" % str(now))
             self.lastPeriodicTime = now
+            gv.iRWMapPnl.updateDisplay()
 
 #-----------------------------------------------------------------------------
     def onHelp(self, event):
