@@ -193,13 +193,14 @@ class PanelEditorMap(wx.Panel):
 
     def onLeftDown(self, event):
         pos = event.GetPosition()
+        wxPointTuple = pos.Get()
         if gv.iMapMgr: 
             print(pos)
-            gv.iMapMgr.checkSelected(pos[0], pos[1])
+            gv.iMapMgr.checkSelected(wxPointTuple[0], wxPointTuple[1])
         
         robot = gv.iMapMgr.getRobot()
         if self.addWaypt:
-            robot.addWayPt(pos)
+            robot.addWayPt([wxPointTuple[0], wxPointTuple[1]])
 
         self.updateDisplay()
         
@@ -214,9 +215,9 @@ class PanelEditorMap(wx.Panel):
         item = self.popupmenu.FindItemById(event.GetId())
         text = item.GetItemLabel()
         if text == "Plant A Robot":
-            if gv.iMapMgr: gv.iMapMgr.initRobot(self.clickPos)
+            if gv.iMapMgr: gv.iMapMgr.initRobot(self.clickPos.copy())
         elif text == "Plant A Enemy":
-            if gv.iMapMgr: gv.iMapMgr.addEnemy(self.clickPos)
+            if gv.iMapMgr: gv.iMapMgr.addEnemy(self.clickPos.copy())
         self.updateDisplay()
 
 #--PanelImge--------------------------------------------------------------------
