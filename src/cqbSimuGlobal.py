@@ -53,9 +53,9 @@ def gDebugPrint(msg, prt=True, logType=None):
         Log.info(msg)
 
 #------<IMAGES PATH>-------------------------------------------------------------
-IMG_FD = 'img'
-ICO_PATH = os.path.join(dirpath, IMG_FD, "cqbIcon.png")
-BGIMG_PATH = os.path.join(dirpath, IMG_FD, "SampleImg.png")
+IMG_FD = os.path.join(dirpath, "img")
+ICO_PATH = os.path.join(IMG_FD, "cqbIcon.png")
+BGIMG_PATH = os.path.join(IMG_FD, "SampleImg.png")
 
 #-------<GLOBAL VARIABLES (start with "g")>------------------------------------
 # VARIABLES are the built in data type.
@@ -69,4 +69,4 @@ iRWMapPnl = None  # Image panel.
 iEDMapPnl = None   # Edit panel.
 iMapMgr = None
 iEDCtrlPanel = None   # editer control panel
-
+iRWCtrlPanel = None   # read only control panel

@@ -11,14 +11,89 @@
 # Copyright:   Copyright (c) 2024 LiuYuancheng
 # License:     MIT License
 #-----------------------------------------------------------------------------
+import os 
 import wx
 
 from datetime import datetime
 import cqbSimuGlobal as gv
 
+class PanelViewerCtrl(wx.Panel):
+
+    def __init__(self, parent, panelSize=(640, 300)):
+        wx.Panel.__init__(self, parent, size=panelSize)
+        self.SetBackgroundColour(wx.Colour(200, 210, 200))
+
+        self.SetSizer(self._buildUISizer())
+
+    def _buildUISizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self._buildSimuCtrlSizer(), flag=flagsL, border=2)
+
+        return sizer
+
+
+    def _buildSimuCtrlSizer(self):
+
+        playBmp = wx.Bitmap(os.path.join(gv.IMG_FD, 'play.png'), wx.BITMAP_TYPE_ANY)
+        pauseBmp = wx.Bitmap(os.path.join(gv.IMG_FD, 'pause.png'), wx.BITMAP_TYPE_ANY)
+        backBmp = wx.Bitmap(os.path.join(gv.IMG_FD, 'back.png'), wx.BITMAP_TYPE_ANY)
+        resetBmp = wx.Bitmap(os.path.join(gv.IMG_FD, 'reset.png'), wx.BITMAP_TYPE_ANY)
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.AddSpacer(5)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Simulation Control")
+        label.SetFont(font)
+        sizer.Add(label, flag= wx.LEFT | wx.ALIGN_CENTER_VERTICAL, border=2)
+
+        self.backBt = wx.BitmapButton(self, bitmap=backBmp,
+                                       size=(backBmp.GetWidth()+5, backBmp.GetHeight()+5))
+        self.backBt.Bind(wx.EVT_BUTTON, self.backSimulation)
+        sizer.Add(self.backBt, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.playBt = wx.BitmapButton(self, bitmap=playBmp,
+                                       size=(playBmp.GetWidth()+5, playBmp.GetHeight()+5))
+        self.playBt.Bind(wx.EVT_BUTTON, self.startSimulation)
+        sizer.Add(self.playBt, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.pauseBt = wx.BitmapButton(self, bitmap=pauseBmp,
+                                       size=(pauseBmp.GetWidth()+5, pauseBmp.GetHeight()+5))
+        self.pauseBt.Bind(wx.EVT_BUTTON, self.pauseSimulation)
+        sizer.Add(self.pauseBt, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.resetBt = wx.BitmapButton(self, bitmap=resetBmp,
+                                       size=(resetBmp.GetWidth()+5, resetBmp.GetHeight()+5))
+        self.resetBt.Bind(wx.EVT_BUTTON, self.resetSimulation)
+        sizer.Add(self.resetBt, flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+
+        return sizer
+
+    def startSimulation(self, event):
+        gv.gDebugPrint("Start simulation")
+        gv.iMapMgr.startMove(True)
+
+    def pauseSimulation(self, event):
+        gv.gDebugPrint("Pause simulation")
+        gv.iMapMgr.startMove(False)
+
+    def resetSimulation(self, event):
+        gv.gDebugPrint("Reset simulation")
+        gv.iMapMgr.resetBot()
+
+    def backSimulation(self, event):
+        gv.gDebugPrint("Back simulation")
+        gv.iMapMgr.robotbackward()
+
+
+
 class PanelEditorCtrl(wx.Panel):
 
-    def __init__(self, parent, panelSize=(640, 480)):
+    def __init__(self, parent, panelSize=(640, 300)):
         wx.Panel.__init__(self, parent, size=panelSize)
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
 
@@ -29,12 +104,12 @@ class PanelEditorCtrl(wx.Panel):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.AddSpacer(5)
         sizer.Add(self._buildMapInfoSizer(), flag=flagsL, border=2)
-        sizer.AddSpacer(5)
+        sizer.AddSpacer(10)
         sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
                                  style=wx.LI_VERTICAL), flag=flagsL, border=2)
-        sizer.AddSpacer(5)
+        sizer.AddSpacer(10)
         sizer.Add(self._buildTargetCtrlSizer(), flag=flagsL, border=2)
-        sizer.AddSpacer(5)
+        sizer.AddSpacer(10)
         sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
                                  style=wx.LI_VERTICAL), flag=flagsL, border=2)
         sizer.AddSpacer(5)

@@ -117,11 +117,26 @@ class AgentRobot(AgentTarget):
             self.trajectory.append(pos)
             print(self.trajectory)
 
+    def resetCrtPos(self):
+        self.moveFlg = False
+        self.crtPos = self.orgPos.copy()
+        self.trajectory = [self.orgPos,]
+
+    def backward(self, timeInv=5):
+        self.moveFlg = False 
+        if len(self.trajectory) < int(timeInv):
+            self.trajectory = [self.orgPos,]
+        else:
+            pos = None 
+            for _ in range(int(timeInv)):
+                pos = self.trajectory.pop()
+            self.crtPos = pos.copy()
+
     def updateCrtPos(self):
         """ Update the current train positions on the map. This function will be 
             called periodicly.
         """
-        if not self.moveFlg and len(self.routePts) == 1: return
+        if not self.moveFlg or len(self.routePts) == 1: return
         nextPt = self.routePts[self.moveTgtIdx]
         dist = math.sqrt((self.crtPos[0] - nextPt[0])**2 + (self.crtPos[1] - nextPt[1])**2)
         if dist <= self.moveSpeed:
@@ -205,3 +220,9 @@ class MapMgr(object):
 
     def startMove(self, moveFlag):
         self.robot.setMoveFlag(moveFlag)
+
+    def resetBot(self):
+        self.robot.resetCrtPos()
+
+    def robotbackward(self, timeInv=5):
+        self.robot.backward(timeInv=timeInv)

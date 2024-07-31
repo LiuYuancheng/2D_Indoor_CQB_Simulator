@@ -123,9 +123,11 @@ class UIFrame(wx.Frame):
         gv.iRWMapPnl = plMap.PanelRealworldMap(self)
         vbox.Add(gv.iRWMapPnl, flag=flagsL, border=2)
         vbox.AddSpacer(5)
+        gv.iRWCtrlPanel = plFunc.PanelViewerCtrl(self)
+        vbox.Add(gv.iRWCtrlPanel, flag=flagsL, border=2)
+        vbox.AddSpacer(5)
 
         return vbox
-
 
 
     def _buildEditorSizer(self):
