@@ -17,10 +17,11 @@ import sys
 import time
 import wx
 import cqbSimuGlobal as gv
+import cqbSimuMapPanel as plMap
 import cqbSimuMapMgr as mapMgr
-import cqbSimuPanel as pl
+import cqbSimuPanel as plFunc
 
-FRAME_SIZE = (1800, 1030)
+FRAME_SIZE = (1860, 1030)
 PERIODIC = 500      # update in every 500ms
 HELP_MSG="""
 If there is any bug, please contact:
@@ -93,21 +94,34 @@ class UIFrame(wx.Frame):
         # Add the image panel
         hbox1 = wx.BoxSizer(wx.HORIZONTAL)
         hbox1.AddSpacer(5)
-        gv.iRWMapPnl = pl.PanelRealworldMap(self)
+        gv.iRWMapPnl = plMap.PanelRealworldMap(self)
         hbox1.Add(gv.iRWMapPnl, flag=flagsR, border=2)
         hbox1.AddSpacer(5)
         hbox1.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 560),
                                  style=wx.LI_VERTICAL), flag=flagsR, border=2)
         hbox1.AddSpacer(5)
-        gv.iEDMapPnl = pl.PanelEditorMap(self)
-        hbox1.Add(gv.iEDMapPnl, flag=flagsR, border=2)
+        editorSizer = self._buildEditorSizer()
+        hbox1.Add(editorSizer, flag=flagsR, border=2)
         mSizer.Add(hbox1, flag=flagsR, border=2)
-
         self.collisionCB = wx.CheckBox(self, label = 'start to move')
         self.collisionCB.Bind(wx.EVT_CHECKBOX, self.onMove)
         mSizer.Add(self.collisionCB, flag=wx.LEFT, border=2)
 
         return mSizer
+
+    def _buildEditorSizer(self):
+        flagsL = wx.LEFT
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.AddSpacer(5)
+        font = wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="CQB Simulation Editor")
+        label.SetFont(font)
+        vbox.Add(label, flag=wx.CENTER, border=2)
+        vbox.AddSpacer(5)
+        gv.iEDMapPnl = plMap.PanelEditorMap(self)
+        vbox.Add(gv.iEDMapPnl, flag=wx.CENTER, border=2)
+        return vbox
+
 
 #--UIFrame---------------------------------------------------------------------
     def periodic(self, event):
