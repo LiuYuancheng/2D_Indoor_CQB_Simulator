@@ -34,7 +34,10 @@ class PanelEditorCtrl(wx.Panel):
                                  style=wx.LI_VERTICAL), flag=flagsL, border=2)
         sizer.AddSpacer(5)
         sizer.Add(self._buildTargetCtrlSizer(), flag=flagsL, border=2)
-
+        sizer.AddSpacer(5)
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
+                                 style=wx.LI_VERTICAL), flag=flagsL, border=2)
+        sizer.AddSpacer(5)
         return sizer
         
     def _buildTargetCtrlSizer(self):
@@ -47,6 +50,15 @@ class PanelEditorCtrl(wx.Panel):
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(5)
 
+        sizer.Add(wx.StaticText(self, label="Selected Target Info:"), flag=flagsL, border=2)
+        self.targetIDLb = wx.StaticText(self, label=" - ID: ")
+        sizer.Add(self.targetIDLb, flag=flagsL, border=2)
+        self.targetPosLb = wx.StaticText(self, label=" - Pos: ")
+        sizer.Add(self.targetPosLb, flag=flagsL, border=2)
+        self.targetTypeLb = wx.StaticText(self, label=" - Type: ")
+        sizer.Add(self.targetTypeLb, flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+    
         self.rmTgtbtn = wx.Button(self, -1, "Remove Selected Target")
         self.rmTgtbtn.Bind(wx.EVT_BUTTON, self.onRemoveTarget)
         sizer.Add(self.rmTgtbtn, flag=flagsL, border=2)
@@ -101,6 +113,14 @@ class PanelEditorCtrl(wx.Panel):
         sizer.Add(self.enemyNumLB, flag=flagsL, border=2)
         sizer.AddSpacer(5)
 
+
+        self.showWPInfoCB = wx.CheckBox(self, label = 'Show Way Points Info')
+        self.showWPInfoCB.SetValue(True)
+        self.showWPInfoCB.Bind(wx.EVT_CHECKBOX, self.onEnableWPInfo)
+        sizer.Add(self.showWPInfoCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+
         return sizer
 
     def setMousePos(self, pos):
@@ -118,19 +138,41 @@ class PanelEditorCtrl(wx.Panel):
     def updateEnemyNum(self, num):
         self.enemyNumLB.SetLabel("Enemy Number : %s" %str(num))
 
+    def updateMapInfo(self):
+        if gv.iMapMgr:
+            rbtObj = gv.iMapMgr.getRobot()
+            rbtNum = 0 if rbtObj is None else 1
+            wpNum = 0 if rbtObj is None else len(rbtObj.getRoutePts())
+            emNum = len(gv.iMapMgr.getEnemy())
+            self.updateRobotNum(rbtNum)
+            self.updateRouteNum(wpNum)
+            self.updateEnemyNum(emNum)
+
+    def updateSelectTargetInfo(self):
+        if gv.iMapMgr:
+            infoTuple = gv.iMapMgr.getSelectedInfo()
+            self.targetIDLb.SetLabel(" - ID : %s" %str(infoTuple[0]))
+            self.targetPosLb.SetLabel(" - Pos : %s" %str(infoTuple[1]))
+            self.targetTypeLb.SetLabel(" - Type : %s" %str(infoTuple[2]))
+
     def onRemoveTarget(self, evt):
         if gv.iMapMgr: gv.iMapMgr.deleteSelected()
         if gv.iEDMapPnl:gv.iEDMapPnl.updateDisplay()
+        self.updateMapInfo()
 
     def onRemoveRoute(self, evt):
         if gv.iMapMgr: gv.iMapMgr.clearRobotRoute()
         if gv.iEDMapPnl:gv.iEDMapPnl.updateDisplay()
+        self.updateMapInfo()
 
     def onEnableRoutePlan(self, evt):
         if gv.iEDMapPnl: 
             gv.gDebugPrint("Start to plan a robot route", logType=gv.LOG_INFO)
             gv.iEDMapPnl.enableWaypt(self.routePlanCB.IsChecked())
 
+    def onEnableWPInfo(self, evt):
+        if gv.iEDMapPnl: gv.iEDMapPnl.enableWPInfo(self.showWPInfoCB.IsChecked())
+        if gv.iEDMapPnl:gv.iEDMapPnl.updateDisplay()
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------

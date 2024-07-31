@@ -94,8 +94,8 @@ class UIFrame(wx.Frame):
         # Add the image panel
         hbox1 = wx.BoxSizer(wx.HORIZONTAL)
         hbox1.AddSpacer(5)
-        gv.iRWMapPnl = plMap.PanelRealworldMap(self)
-        hbox1.Add(gv.iRWMapPnl, flag=flagsR, border=2)
+        viewerSizer = self._buildRealWordSizer()
+        hbox1.Add(viewerSizer, flag=wx.LEFT, border=2)
         hbox1.AddSpacer(5)
         hbox1.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 800),
                                  style=wx.LI_VERTICAL), flag=flagsR, border=2)
@@ -108,6 +108,25 @@ class UIFrame(wx.Frame):
         mSizer.Add(self.collisionCB, flag=wx.LEFT, border=2)
 
         return mSizer
+
+    def _buildRealWordSizer(self):
+        """ Build the real world display sizer. """
+        flagsL = wx.LEFT
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.AddSpacer(5)
+        font = wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="CQB Simulation Viewer")
+        label.SetFont(font)
+        vbox.Add(label, flag=wx.CENTER, border=2)
+        vbox.AddSpacer(5)        
+
+        gv.iRWMapPnl = plMap.PanelRealworldMap(self)
+        vbox.Add(gv.iRWMapPnl, flag=flagsL, border=2)
+        vbox.AddSpacer(5)
+
+        return vbox
+
+
 
     def _buildEditorSizer(self):
         flagsL = wx.LEFT
@@ -147,7 +166,6 @@ class UIFrame(wx.Frame):
         mvFlg = self.collisionCB.IsChecked()
         print("set to move flag: %s" %str(mvFlg))
         gv.iMapMgr.startMove(mvFlg)
-
 
 #-----------------------------------------------------------------------------
     def onLoadScenario(self, event):

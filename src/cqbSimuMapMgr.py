@@ -88,7 +88,6 @@ class AgentRobot(AgentTarget):
         self.moveTgtIdx = 0
         self.moveSpeed = speed
 
-
     def clearRoute(self):
         self.routePts = [self.orgPos,]
 
@@ -112,11 +111,11 @@ class AgentRobot(AgentTarget):
 
     def _addPosInTra(self, pos):
         if len(self.trajectory) >= self.trajectoryMaxSize:
-            print("----------")
             self.trajectory.pop(0)
-        print(pos)
-        self.trajectory.append(pos)
-        print(self.trajectory)
+        lastPoint = self.trajectory[-1]
+        if lastPoint[0] != pos[0] or lastPoint[1] != pos[1]:
+            self.trajectory.append(pos)
+            print(self.trajectory)
 
     def updateCrtPos(self):
         """ Update the current train positions on the map. This function will be 
@@ -156,6 +155,15 @@ class MapMgr(object):
         self.enemys.append(AgentEnemy(self, self.enemysIdCount, pos))
         self.enemysIdCount += 1
 
+    def getSelectedInfo(self):
+        if self.robot and self.robot.getSelected():
+            return (self.robot.getID(), self.robot.getOrgPos(), 'Robot')
+        else:
+            for enemyObj in self.enemys:
+                if enemyObj.getSelected():
+                    return (enemyObj.getID(), enemyObj.getOrgPos(), 'Enemy')
+            return ('N.A', 'N.A', 'N.A')
+
     def deleteSelected(self):
         if self.robot and self.robot.getSelected():
             self.robot = None
@@ -175,14 +183,17 @@ class MapMgr(object):
                     return enemyObj
 
     def checkSelected(self, posX, posY, threshold=8):
-        self.robot.setSelected(False) 
+        self.robot.setSelected(False)
+        findSelected = False 
         if self.robot.checkNear(posX, posY, threshold):
             self.robot.setSelected(True)
-
+ 
         for enemyObj in self.enemys:
             enemyObj.setSelected(False)
             if enemyObj.checkNear(posX, posY, threshold):
                 enemyObj.setSelected(True)
+
+        if gv.iEDCtrlPanel: gv.iEDCtrlPanel.updateSelectTargetInfo()
 
     def clearRobotRoute(self):
         if self.robot:

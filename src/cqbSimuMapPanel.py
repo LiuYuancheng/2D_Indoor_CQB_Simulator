@@ -101,6 +101,7 @@ class PanelEditorMap(wx.Panel):
         #self.SetBackgroundColour(self.bgColor)
         self.panelSize = panelSize
         self.bgBmp = None
+        self.showWPIdx = True
 
         self.clickPos = None 
         self.Bind(wx.EVT_PAINT, self.onPaint)
@@ -125,6 +126,9 @@ class PanelEditorMap(wx.Panel):
         self.defaultPen = dc.GetPen()
         self._drawBG(dc)
         self._drawItems(dc)
+
+    def enableWPInfo(self, flag):
+        self.showWPIdx = flag
 
     #--PanelEditorMap--------------------------------------------------------------------
     def _drawBG(self, dc):
@@ -163,7 +167,13 @@ class PanelEditorMap(wx.Panel):
                 if len(waypts)>1:
                     dc.SetPen(wx.Pen(wx.Colour(67, 138, 85), 2, style=wx.PENSTYLE_LONG_DASH))
                     dc.DrawLines(waypts)
-
+                    if self.showWPIdx:
+                        for i, pt in enumerate(waypts):
+                            dc.SetTextForeground(wx.Colour(169, 167, 12))
+                            dc.SetBrush(wx.Brush(wx.Colour(169, 167, 12)))
+                            dc.DrawCircle(pt[0], pt[1], 3)
+                            dc.DrawText("WP-%s %s" %(str(i), str(pt)), pt[0]+3, pt[1]+3)
+ 
             # drow the enemy
             dc.SetPen(self.defaultPen)
             dc.SetBrush(wx.Brush(wx.Colour("RED")))
@@ -205,6 +215,7 @@ class PanelEditorMap(wx.Panel):
             robot.addWayPt([wxPointTuple[0], wxPointTuple[1]])
 
         self.updateDisplay()
+        gv.iEDCtrlPanel.updateMapInfo()
         
     def enableWaypt(self, flag):
         self.addWaypt = flag
@@ -225,6 +236,7 @@ class PanelEditorMap(wx.Panel):
         elif text == "Plant A Enemy":
             if gv.iMapMgr: gv.iMapMgr.addEnemy(self.clickPos.copy())
         self.updateDisplay()
+        gv.iEDCtrlPanel.updateMapInfo()
 
 #--PanelImge--------------------------------------------------------------------
     def updateBitmap(self, bitMap):
