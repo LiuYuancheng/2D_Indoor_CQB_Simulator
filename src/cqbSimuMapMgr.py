@@ -88,6 +88,10 @@ class AgentRobot(AgentTarget):
         self.moveTgtIdx = 0
         self.moveSpeed = speed
 
+
+    def clearRoute(self):
+        self.routePts = [self.orgPos,]
+
     def getCrtPos(self):
         return self.crtPos
 
@@ -118,7 +122,7 @@ class AgentRobot(AgentTarget):
         """ Update the current train positions on the map. This function will be 
             called periodicly.
         """
-        if not self.moveFlg: return
+        if not self.moveFlg and len(self.routePts) == 1: return
         nextPt = self.routePts[self.moveTgtIdx]
         dist = math.sqrt((self.crtPos[0] - nextPt[0])**2 + (self.crtPos[1] - nextPt[1])**2)
         if dist <= self.moveSpeed:
@@ -174,12 +178,15 @@ class MapMgr(object):
         self.robot.setSelected(False) 
         if self.robot.checkNear(posX, posY, threshold):
             self.robot.setSelected(True)
-            return True
+
         for enemyObj in self.enemys:
             enemyObj.setSelected(False)
             if enemyObj.checkNear(posX, posY, threshold):
                 enemyObj.setSelected(True)
-                return True
+
+    def clearRobotRoute(self):
+        if self.robot:
+            self.robot.clearRoute()
 
     def periodic(self):
         if self.robot: 

@@ -16,6 +16,122 @@ import wx
 from datetime import datetime
 import cqbSimuGlobal as gv
 
+class PanelEditorCtrl(wx.Panel):
+
+    def __init__(self, parent, panelSize=(640, 480)):
+        wx.Panel.__init__(self, parent, size=panelSize)
+        self.SetBackgroundColour(wx.Colour(200, 210, 200))
+
+        self.SetSizer(self._buildUISizer())
+
+    def _buildUISizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.AddSpacer(5)
+        sizer.Add(self._buildMapInfoSizer(), flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
+                                 style=wx.LI_VERTICAL), flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+        sizer.Add(self._buildTargetCtrlSizer(), flag=flagsL, border=2)
+
+        return sizer
+        
+    def _buildTargetCtrlSizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(5)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Target Control")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.rmTgtbtn = wx.Button(self, -1, "Remove Selected Target")
+        self.rmTgtbtn.Bind(wx.EVT_BUTTON, self.onRemoveTarget)
+        sizer.Add(self.rmTgtbtn, flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+
+
+        self.routePlanCB = wx.CheckBox(self, label = 'Plan Robot Route')
+        self.routePlanCB.Bind(wx.EVT_CHECKBOX, self.onEnableRoutePlan)
+        sizer.Add(self.routePlanCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.rmRoutebtn = wx.Button(self, -1, "Clear Robot Route")
+        self.rmRoutebtn.Bind(wx.EVT_BUTTON, self.onRemoveRoute)
+        sizer.Add(self.rmRoutebtn, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+
+        return sizer
+
+
+    def _buildMapInfoSizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(5)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Map Informaion")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        label = wx.StaticText(self, label="Build Blue Print :")
+        sizer.Add(label, flag=flagsL, border=2)
+        self.bpval = wx.TextCtrl(self, -1, " ",size=(200, 25))
+        sizer.Add(self.bpval, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        label = wx.StaticText(self, label="Current Mouse Pos :")
+        sizer.Add(label, flag=flagsL, border=2)
+        self.mousPos = wx.TextCtrl(self, -1, " ",size=(90, 25))
+        sizer.Add(self.mousPos, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.robotNumLB = wx.StaticText(self, label="Robot Number : 0")
+        sizer.Add(self.robotNumLB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.routeNumLB = wx.StaticText(self, label="Robot Route WaiPoint : 0")
+        sizer.Add(self.routeNumLB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.enemyNumLB = wx.StaticText(self, label="Enemy Number : 0")
+        sizer.Add(self.enemyNumLB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        return sizer
+
+    def setMousePos(self, pos):
+        self.mousPos.SetValue("X: %d, Y: %d" % (pos[0], pos[1]))
+
+    def setBPInfo(self, bpInfo):
+        self.bpval.SetValue(bpInfo)
+
+    def updateRobotNum(self, num):
+        self.robotNumLB.SetLabel("Robot Number : %s" %str(num))
+
+    def updateRouteNum(self, num):
+        self.routeNumLB.SetLabel("Robot Route WaiPoint : %s" %str(num))
+
+    def updateEnemyNum(self, num):
+        self.enemyNumLB.SetLabel("Enemy Number : %s" %str(num))
+
+    def onRemoveTarget(self, evt):
+        if gv.iMapMgr: gv.iMapMgr.deleteSelected()
+        if gv.iEDMapPnl:gv.iEDMapPnl.updateDisplay()
+
+    def onRemoveRoute(self, evt):
+        if gv.iMapMgr: gv.iMapMgr.clearRobotRoute()
+        if gv.iEDMapPnl:gv.iEDMapPnl.updateDisplay()
+
+    def onEnableRoutePlan(self, evt):
+        if gv.iEDMapPnl: 
+            gv.gDebugPrint("Start to plan a robot route", logType=gv.LOG_INFO)
+            gv.iEDMapPnl.enableWaypt(self.routePlanCB.IsChecked())
+
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelImge(wx.Panel):
@@ -108,13 +224,13 @@ def main():
     print('1 - PanelCtrl')
     #pyin = str(input()).rstrip('\n')
     #testPanelIdx = int(pyin)
-    testPanelIdx = 1    # change this parameter for you to test.
+    testPanelIdx = 0    # change this parameter for you to test.
     print("[%s]" %str(testPanelIdx))
     app = wx.App()
     mainFrame = wx.Frame(gv.iMainFrame, -1, 'Debug Panel',
                          pos=(300, 300), size=(640, 480), style=wx.DEFAULT_FRAME_STYLE)
     if testPanelIdx == 0:
-        testPanel = PanelImge(mainFrame)
+        testPanel = PanelEditorCtrl(mainFrame)
     elif testPanelIdx == 1:
         testPanel = PanelCtrl(mainFrame)
     mainFrame.Show()

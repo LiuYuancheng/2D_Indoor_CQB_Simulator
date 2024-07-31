@@ -94,8 +94,6 @@ class PanelRealworldMap(wx.Panel):
         self.updateDisplay()
 
 
-
-
 class PanelEditorMap(wx.Panel):
     def __init__(self, parent, panelSize=(900, 600)):
         wx.Panel.__init__(self, parent, size=panelSize)
@@ -117,7 +115,7 @@ class PanelEditorMap(wx.Panel):
         self.Bind(wx.EVT_RIGHT_DOWN, self.onShowPopup)
         #self.Bind(wx.EVT_CONTEXT_MENU, self.onShowPopup)
 
-        self.addWaypt = True
+        self.addWaypt = False # flag to identify whether can plan route on the map
 
         self.SetDoubleBuffered(True)
 
@@ -190,6 +188,9 @@ class PanelEditorMap(wx.Panel):
 
     def onMouseMove(self, event):
         scrnPt = event.GetPosition()
+        value = (scrnPt[0], scrnPt[1])
+        if gv.iEDCtrlPanel: gv.iEDCtrlPanel.setMousePos(value)
+
         #print(scrnPt)
 
     def onLeftDown(self, event):
@@ -205,6 +206,10 @@ class PanelEditorMap(wx.Panel):
 
         self.updateDisplay()
         
+    def enableWaypt(self, flag):
+        self.addWaypt = flag
+
+
 #---PanelMap--------------------------------------------------------------------------
     def onShowPopup(self, event):
         pos = event.GetPosition()

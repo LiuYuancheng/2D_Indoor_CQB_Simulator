@@ -68,5 +68,5 @@ iMainFrame = None   # MainFrame.
 iRWMapPnl = None  # Image panel.
 iEDMapPnl = None   # Edit panel.
 iMapMgr = None
-iCtrlPanel = None   # control panel
+iEDCtrlPanel = None   # editer control panel
 

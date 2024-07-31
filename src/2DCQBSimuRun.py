@@ -97,7 +97,7 @@ class UIFrame(wx.Frame):
         gv.iRWMapPnl = plMap.PanelRealworldMap(self)
         hbox1.Add(gv.iRWMapPnl, flag=flagsR, border=2)
         hbox1.AddSpacer(5)
-        hbox1.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 560),
+        hbox1.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 800),
                                  style=wx.LI_VERTICAL), flag=flagsR, border=2)
         hbox1.AddSpacer(5)
         editorSizer = self._buildEditorSizer()
@@ -120,6 +120,10 @@ class UIFrame(wx.Frame):
         vbox.AddSpacer(5)
         gv.iEDMapPnl = plMap.PanelEditorMap(self)
         vbox.Add(gv.iEDMapPnl, flag=wx.CENTER, border=2)
+        vbox.AddSpacer(5)
+        gv.iEDCtrlPanel = plFunc.PanelEditorCtrl(self)
+        vbox.Add(gv.iEDCtrlPanel, flag=flagsL, border=2)
+
         return vbox
 
 
@@ -152,9 +156,11 @@ class UIFrame(wx.Frame):
             wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         openFileDialog.ShowModal()
         bpPath = str(openFileDialog.GetPath())
+        filename = str(openFileDialog.GetFilename())
         openFileDialog.Destroy()
+        if filename == "": return
         gv.gBluePrintBM = wx.Bitmap(bpPath, wx.BITMAP_TYPE_ANY)
-        print(bpPath)
+        if gv.iEDCtrlPanel: gv.iEDCtrlPanel.setBPInfo(filename)
         if gv.iRWMapPnl: gv.iRWMapPnl.updateBitmap(gv.gBluePrintBM)
         if gv.iEDMapPnl: gv.iEDMapPnl.updateBitmap(gv.gBluePrintBM)
         gv.iRWMapPnl.updateDisplay()
