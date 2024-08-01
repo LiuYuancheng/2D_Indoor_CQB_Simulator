@@ -2,8 +2,8 @@
 #-----------------------------------------------------------------------------
 # Name:        cqbSimuMapMgr.py
 #
-# Purpose:     The management module to control all the components on the map 
-#              and update the components state. 
+# Purpose:     The UI management module used to control all the components on 
+#              the simulator map and update the components state. 
 # 
 # Author:      Yuancheng Liu
 #
@@ -15,7 +15,6 @@
 
 import math
 from random import randint
-
 import cqbSimuGlobal as gv
 
 ROB_TYPE = 0 
@@ -26,14 +25,21 @@ PRE_TYPE = 2
 #-----------------------------------------------------------------------------
 class AgentTarget(object):
     """ Create a agent target to generate all the elements in the cqb simulation system, 
-        all the other 'things' in the map will be inheritance from this module.
+        all the 'things' in the UI map will inhert from this class.
     """
     def __init__(self, parent, tgtID, pos, tType):
+        """ Init example : target = AgentTarget(None, 1, [100, 100], 1)
+            Args:
+                parent (obj): object reference 
+                tgtID (int): target ID.
+                pos (list(int, int)): init position on the map.
+                tType (int): target type
+        """
         self.parent = parent
         self.id = tgtID
-        self.orgPos = pos.copy()   # target init position on the map.
+        self.orgPos = pos.copy()   # components init position on the map.
         self.tType = tType         # 1 int agent types
-        self.selected = False
+        self.selected = False      # Flag to identify whether the agent is selected.
 
     #--AgentTarget-----------------------------------------------------------------
     # Define all the get() functions here:
@@ -49,6 +55,9 @@ class AgentTarget(object):
     def getSelected(self):
         return self.selected
     
+    
+    #--AgentTarget-----------------------------------------------------------------
+    # Define all the set() functions here:
     def setSelected(self, selFlg):
         self.selected = selFlg
 
@@ -63,10 +72,11 @@ class AgentTarget(object):
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class AgentEnemy(AgentTarget):
+    """ Agent enemy class, inherit from the AgentTarget class. enemies are stationary"""
 
     def __init__(self, parent, tgtID, pos):
         super().__init__(parent, tgtID, pos, EMY_TYPE)
-        self.predPos = None
+        self.predPos = None # predicted position of the target.
 
     def getPredPos(self):
         return self.predPos
@@ -77,33 +87,49 @@ class AgentEnemy(AgentTarget):
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class AgentRobot(AgentTarget):
-
-    def __init__(self, parent, tgtID, pos, speed=10, traMaxSize=100, traColNum=3):
+    """ Agent robot class, inherit from the AgentTarget class. robots are moving. """
+    def __init__(self, parent, tgtID, pos, speed=10, traMaxSize=100):
+        """ 
+            Args:
+                speed (int, optional): robot move speed on map (pixel/clock cycle). 
+                    Defaults to 10.
+                traMaxSize (int, optional): robot trajectory max record way point 
+                    size. Defaults to 100.
+        """
         super().__init__(parent, tgtID, pos, ROB_TYPE)
-        self.crtPos = pos.copy()
-        self.routePts = [self.orgPos,]
-        self.trajectory = [self.orgPos,]
+        self.crtPos = pos.copy()    # Current robot position
+        self.routePts = [self.orgPos, ]      # route list
+        self.trajectory = [self.orgPos, ]    # trajectory list
         self.trajectoryMaxSize = traMaxSize
-        self.trajectoryColNum = traColNum
-        self.trajectoryColCount = 0
+        
+        self.traplayStepIdx = 0     # Curret position Idx in the trajectory list
+        self.traplayStepMode = False 
+
         self.moveFlg = False
         self.moveTgtIdx = 0
         self.moveSpeed = speed
 
+    #-----------------------------------------------------------------------------
+    def _addPosInTra(self, pos):
+        """ Add a new position to the trajectory list."""
+        if len(self.trajectory) >= self.trajectoryMaxSize: self.trajectory.pop(0)
+        lastPoint = self.trajectory[-1]
+        if lastPoint[0] != pos[0] or lastPoint[1] != pos[1]:
+            self.traplayStepIdx = len(self.trajectory)
+            self.trajectory.append(pos)
+
+    def addWayPt(self, pos):
+        """Add a new way point in the route list."""
+        self.routePts.append(pos)
+    
     def clearRoute(self):
         self.routePts = [self.orgPos,]
-
-    def getCrtPos(self):
-        return self.crtPos
 
     def isMoving(self):
         return self.moveFlg
 
-    def setMoveFlag(self, moveFlg):
-        self.moveFlg = moveFlg
-
-    def addWayPt(self, pos):
-        self.routePts.append(pos)
+    def getCrtPos(self):
+        return self.crtPos
 
     def getRoutePts(self):
         return self.routePts
@@ -111,13 +137,8 @@ class AgentRobot(AgentTarget):
     def getTrajectory(self):
         return self.trajectory.copy()
 
-    def _addPosInTra(self, pos):
-        if len(self.trajectory) >= self.trajectoryMaxSize:
-            self.trajectory.pop(0)
-        lastPoint = self.trajectory[-1]
-        if lastPoint[0] != pos[0] or lastPoint[1] != pos[1]:
-            self.trajectory.append(pos)
-            print(self.trajectory)
+    def setMoveFlag(self, moveFlg):
+        self.moveFlg = moveFlg
 
     def resetCrtPos(self):
         self.moveFlg = False
@@ -125,34 +146,53 @@ class AgentRobot(AgentTarget):
         self.trajectory = [self.orgPos,]
         self.moveTgtIdx = 0
 
-    def backward(self, timeInv=5):
-        self.moveFlg = False 
+    def forward(self, timeInv=3):
+        self.moveFlg = False
+        self.traplayStepMode = True 
+        if self.traplayStepIdx + timeInv > len(self.trajectory)-1:
+            self.traplayStepIdx = len(self.trajectory)-1
+        else:
+            self.traplayStepIdx += timeInv
+            self.crtPos = self.trajectory[self.traplayStepIdx].copy()
+       
+    def backward(self, timeInv=3):
+        self.moveFlg = False
+        self.traplayStepMode = True 
         if len(self.trajectory) < int(timeInv):
             self.trajectory = [self.orgPos,]
+            self.traplayStepIdx = 0
         else:
-            pos = None 
-            for _ in range(int(timeInv)):
-                pos = self.trajectory.pop()
-            self.crtPos = pos.copy()
+            self.traplayStepIdx -= timeInv
+            if self.traplayStepIdx < 0: self.traplayStepIdx = 0
+            self.crtPos = self.trajectory[self.traplayStepIdx].copy()
 
     def updateCrtPos(self):
         """ Update the current train positions on the map. This function will be 
             called periodicly.
         """
         if not self.moveFlg or len(self.routePts) == 1: return
-        nextPt = self.routePts[self.moveTgtIdx]
-        dist = math.sqrt((self.crtPos[0] - nextPt[0])**2 + (self.crtPos[1] - nextPt[1])**2)
-        if dist <= self.moveSpeed:
-            self.crtPos[0], self.crtPos[1] = nextPt[0], nextPt[1]
-            if self.moveTgtIdx < len(self.routePts)-1: 
-                self.moveTgtIdx +=1
+        if self.traplayStepMode:
+            if self.traplayStepIdx < len(self.trajectory)-1:
+                self.crtPos = self.trajectory[self.traplayStepIdx].copy()
+                self.traplayStepIdx += 1
+                return
             else:
-                self.moveFlg = False
+                self.traplayStepMode = False
         else:
-            self.crtPos[0] += int((nextPt[0] - self.crtPos[0])*1.0/dist * self.moveSpeed)
-            self.crtPos[1] += int((nextPt[1] - self.crtPos[1])*1.0/dist * self.moveSpeed)
-        # Add the current pos to the trajectory
-        self._addPosInTra(self.crtPos.copy())
+            # Update the current position under moving mode
+            nextPt = self.routePts[self.moveTgtIdx]
+            dist = math.sqrt((self.crtPos[0] - nextPt[0])**2 + (self.crtPos[1] - nextPt[1])**2)
+            if dist <= self.moveSpeed:
+                self.crtPos[0], self.crtPos[1] = nextPt[0], nextPt[1]
+                if self.moveTgtIdx < len(self.routePts)-1: 
+                    self.moveTgtIdx +=1
+                else:
+                    self.moveFlg = False
+            else:
+                self.crtPos[0] += int((nextPt[0] - self.crtPos[0])*1.0/dist * self.moveSpeed)
+                self.crtPos[1] += int((nextPt[1] - self.crtPos[1])*1.0/dist * self.moveSpeed)
+            # Add the current pos to the trajectory
+            self._addPosInTra(self.crtPos.copy())
 
 
 #-----------------------------------------------------------------------------
@@ -227,9 +267,11 @@ class MapMgr(object):
     def resetBot(self):
         self.robot.resetCrtPos()
 
-    def robotbackward(self, timeInv=5):
+    def robotbackward(self, timeInv=3):
         self.robot.backward(timeInv=timeInv)
 
+    def robotforward(self, timeInv=3):
+        self.robot.forward(timeInv=timeInv)
 
     def genRandomPred(self):
         for enemyObj in self.enemys:

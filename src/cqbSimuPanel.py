@@ -119,6 +119,7 @@ class PanelViewerCtrl(wx.Panel):
         pauseBmp = wx.Bitmap(os.path.join(gv.IMG_FD, 'pause.png'), wx.BITMAP_TYPE_ANY)
         backBmp = wx.Bitmap(os.path.join(gv.IMG_FD, 'back.png'), wx.BITMAP_TYPE_ANY)
         resetBmp = wx.Bitmap(os.path.join(gv.IMG_FD, 'reset.png'), wx.BITMAP_TYPE_ANY)
+        forwardBmp = wx.Bitmap(os.path.join(gv.IMG_FD, 'forward.png'), wx.BITMAP_TYPE_ANY)
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.AddSpacer(5)
@@ -150,7 +151,14 @@ class PanelViewerCtrl(wx.Panel):
                                        size=(resetBmp.GetWidth()+5, resetBmp.GetHeight()+5))
         self.resetBt.Bind(wx.EVT_BUTTON, self.resetSimulation)
         sizer.Add(self.resetBt, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.forwardBt = wx.BitmapButton(self, bitmap=forwardBmp,
+                                       size=(forwardBmp.GetWidth()+5, forwardBmp.GetHeight()+5))
+        self.forwardBt.Bind(wx.EVT_BUTTON, self.forwardSimulation)
+        sizer.Add(self.forwardBt, flag=flagsL, border=2)
         sizer.AddSpacer(10)
+
 
         stlabel = wx.StaticText(self, label="State : ")
         stlabel.SetFont(font)
@@ -186,6 +194,12 @@ class PanelViewerCtrl(wx.Panel):
         self.stValLb.SetForegroundColour(wx.Colour(195, 60, 45))
         self.stValLb.SetLabel("Paused")
         gv.iMapMgr.robotbackward()
+
+    def forwardSimulation(self, event):
+        gv.gDebugPrint("Forward simulation")
+        self.stValLb.SetForegroundColour(wx.Colour(195, 60, 45))
+        self.stValLb.SetLabel("Paused")
+        gv.iMapMgr.robotforward()
 
 
 class PanelEditorCtrl(wx.Panel):
