@@ -14,6 +14,8 @@
 #-----------------------------------------------------------------------------
 
 import math
+from random import randint
+
 import cqbSimuGlobal as gv
 
 ROB_TYPE = 0 
@@ -198,10 +200,10 @@ class MapMgr(object):
                     return enemyObj
 
     def checkSelected(self, posX, posY, threshold=8):
-        self.robot.setSelected(False)
-        findSelected = False 
-        if self.robot.checkNear(posX, posY, threshold):
-            self.robot.setSelected(True)
+        if self.robot:
+            self.robot.setSelected(False)
+            if self.robot.checkNear(posX, posY, threshold):
+                self.robot.setSelected(True)
  
         for enemyObj in self.enemys:
             enemyObj.setSelected(False)
@@ -226,3 +228,11 @@ class MapMgr(object):
 
     def robotbackward(self, timeInv=5):
         self.robot.backward(timeInv=timeInv)
+
+
+    def genRandomPred(self):
+        for enemyObj in self.enemys:
+            pos = enemyObj.getOrgPos()
+            x = pos[0] + randint(-50, 50)
+            y = pos[1] + randint(-50, 50)
+            enemyObj.setPredPos([x, y])

@@ -28,7 +28,7 @@ class PanelRealworldMap(wx.Panel):
         self.showDetectFlg = True
         self.showTrajectoryFlg = True
         self.showEnemyFlg = True 
-        self.showPredictFlg = False
+        self.showPredictFlg = True
 
         self.Bind(wx.EVT_PAINT, self.onPaint)
         self.SetDoubleBuffered(True)

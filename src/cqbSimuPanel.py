@@ -34,18 +34,18 @@ class PanelViewerCtrl(wx.Panel):
         sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(900, -1),
                                  style=wx.LI_HORIZONTAL), flag=wx.CENTER, border=2)
         sizer.AddSpacer(5)
-        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
-        label = wx.StaticText(self, label="Display Control")
-        label.SetFont(font)
-        sizer.Add(label, flag=flagsL, border=2)
-        sizer.AddSpacer(5)
         sizer.Add(self._buildDisplayCtrlSizer(), flag=flagsL, border=2)
         return sizer
 
 
     def _buildDisplayCtrlSizer(self):
         flagsL = wx.LEFT
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Display Control")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(10)
         
         self.showDetectCB = wx.CheckBox(self, label = 'Show Robot Detection Area')
@@ -53,8 +53,6 @@ class PanelViewerCtrl(wx.Panel):
         self.showDetectCB.SetValue(False)
         sizer.Add(self.showDetectCB, flag=flagsL, border=2)
         sizer.AddSpacer(5)
-
-
 
         self.showRouteCB = wx.CheckBox(self, label = 'Show Robot Route')
         self.showRouteCB.Bind(wx.EVT_CHECKBOX, self.onShowRoute)
@@ -75,7 +73,7 @@ class PanelViewerCtrl(wx.Panel):
         sizer.AddSpacer(5)
 
         self.showPredictCB = wx.CheckBox(self, label = 'Show Enemy Prediction')
-        self.showPredictCB.Bind(wx.EVT_CHECKBOX, self.onShowEnemy)
+        self.showPredictCB.Bind(wx.EVT_CHECKBOX, self.onShowPredict)
         self.showPredictCB.SetValue(True)
         sizer.Add(self.showPredictCB, flag=flagsL, border=2)
         sizer.AddSpacer(5)
@@ -202,9 +200,28 @@ class PanelEditorCtrl(wx.Panel):
         sizer.AddSpacer(10)
         sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
                                  style=wx.LI_VERTICAL), flag=flagsL, border=2)
-        sizer.AddSpacer(5)
+        sizer.AddSpacer(10)
+        sizer.Add(self._buildPredCtrlSizer(), flag=flagsL, border=2)
         return sizer
         
+
+    def _buildPredCtrlSizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(5)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Prediction Control")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.predGenbtn = wx.Button(self, -1, "Generate Random Prediction")
+        self.predGenbtn.Bind(wx.EVT_BUTTON, self.onGeneratePred)
+        sizer.Add(self.predGenbtn, flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+        return sizer
+
+
     def _buildTargetCtrlSizer(self):
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -338,6 +355,11 @@ class PanelEditorCtrl(wx.Panel):
     def onEnableWPInfo(self, evt):
         if gv.iEDMapPnl: gv.iEDMapPnl.enableWPInfo(self.showWPInfoCB.IsChecked())
         if gv.iEDMapPnl:gv.iEDMapPnl.updateDisplay()
+
+    def onGeneratePred(self, evt):
+        if gv.iMapMgr: gv.iMapMgr.genRandomPred()
+
+
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
