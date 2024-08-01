@@ -13,6 +13,7 @@
 # License:     MIT License
 #-----------------------------------------------------------------------------
 
+import os 
 import wx
 import cqbSimuGlobal as gv
 
@@ -22,13 +23,17 @@ class PanelRealworldMap(wx.Panel):
         self.bgColor = wx.Colour(200, 200, 200)
         #self.SetBackgroundColour(self.bgColor)
         self.panelSize = panelSize
+        self.toggle = False 
         self.bgBmp = None
+        self.heatMapBmp = None
+        self.heatMapBmp = wx.Bitmap(os.path.join(gv.HM_FD, 'transparent_image.png'), wx.BITMAP_TYPE_ANY)
 
         self.showRouteFlg = False
         self.showDetectFlg = True
         self.showTrajectoryFlg = True
         self.showEnemyFlg = True 
         self.showPredictFlg = True
+        self.showHeatmap = False 
 
         self.Bind(wx.EVT_PAINT, self.onPaint)
         self.SetDoubleBuffered(True)
@@ -48,6 +53,8 @@ class PanelRealworldMap(wx.Panel):
     def setShowPredict(self, flg):
         self.showPredictFlg = flg
 
+    def setShowHeatmap(self, flg):
+        self.showHeatmap = flg
 
     def onPaint(self, evt):
         """ Draw the map on the panel."""
@@ -58,6 +65,10 @@ class PanelRealworldMap(wx.Panel):
         dc.DrawRectangle(0, 0, w, h)
         if self.bgBmp is not None:
             dc.DrawBitmap(self._scaleBitmap(self.bgBmp, w, h), 0, 0)
+
+        if self.showHeatmap:
+            dc.DrawBitmap(self._scaleBitmap(self.heatMapBmp, w, h), 0, 0)
+
         self._drawItems(dc)
 
     def _drawItems(self, dc):
@@ -71,8 +82,9 @@ class PanelRealworldMap(wx.Panel):
                 # Draw the route
                 if self.showRouteFlg:
                     waypts = robotObj.getRoutePts()
-                    if len(waypts)>1:
-                        dc.SetPen(self.defaultPen)
+                    if len(waypts) > 1:
+                        pen = wx.Pen(wx.Colour("GREEN"), 1, style=wx.PENSTYLE_LONG_DASH) if self.toggle else self.defaultPen
+                        dc.SetPen(pen)
                         dc.DrawLines(waypts)
                         for i, pt in enumerate(waypts):
                             dc.DrawText("WP-%s %s" %(str(i), str(pt)), pt[0]+3, pt[1]+3)
@@ -80,7 +92,8 @@ class PanelRealworldMap(wx.Panel):
                 if self.showTrajectoryFlg:
                     trajectory = robotObj.getTrajectory()
                     # Draw trajectory
-                    dc.SetPen(wx.Pen(wx.Colour(197, 134, 192), 2, style=wx.PENSTYLE_LONG_DASH))
+                    #dc.SetPen(wx.Pen(wx.Colour(197, 134, 192), 2, style=wx.PENSTYLE_LONG_DASH))
+                    dc.SetPen(wx.Pen(wx.Colour("RED"), 2, style=wx.PENSTYLE_LONG_DASH))
                     dc.DrawLines(trajectory)
                 
                 # Draw robot position
@@ -88,15 +101,14 @@ class PanelRealworldMap(wx.Panel):
                 if self.showDetectFlg:
                     dc.SetPen(wx.Pen(wx.Colour(157, 204, 149), 1, style=wx.PENSTYLE_LONG_DASH))
                     gdc = wx.GCDC(dc)
-                    gdc.SetBrush(wx.Brush(wx.Colour(157, 204, 149, 128)))  
+                    color = wx.Colour(157, 204, 149, 128) if self.toggle else wx.Colour(157, 204, 149, 20)
+                    gdc.SetBrush(wx.Brush(color))  
                     gdc.DrawEllipse(pos[0]-40, pos[1]-40, 80, 80)
                
-                dc.SetBrush(wx.Brush(wx.Colour(67, 138, 85)))
+                robotColor = wx.Colour("GREEN") if self.toggle else wx.Colour(67, 138, 85)
+                dc.SetBrush(wx.Brush(robotColor))
                 dc.SetPen(self.defaultPen)
                 dc.DrawCircle(pos[0], pos[1], 8)
-
-
-
 
 
             # drow the enemy
@@ -147,6 +159,7 @@ class PanelRealworldMap(wx.Panel):
             will set the self update flag.
         """
         self.Refresh(False)
+        self.toggle = not self.toggle
         self.Update()
 
 #--PanelMap--------------------------------------------------------------------
@@ -154,6 +167,7 @@ class PanelRealworldMap(wx.Panel):
         """ periodicly call back to do needed calcualtion/panel update"""
         # Call the onPaint to update the map display.
         self.updateDisplay()
+        
 
 
 class PanelEditorMap(wx.Panel):

@@ -21,7 +21,7 @@ import cqbSimuMapPanel as plMap
 import cqbSimuMapMgr as mapMgr
 import cqbSimuPanel as plFunc
 
-FRAME_SIZE = (1860, 1030)
+FRAME_SIZE = (1860, 930)
 PERIODIC = 500      # update in every 500ms
 HELP_MSG="""
 If there is any bug, please contact:
@@ -46,6 +46,8 @@ class UIFrame(wx.Frame):
 
         #self.SetTransparent(gv.gTranspPct*255//100)
         self._buildMenuBar()
+        self.statusbar = self.CreateStatusBar(1)
+        self.statusbar.SetStatusText('Test mode: %s' %str(False))
 
         self.SetIcon(wx.Icon(gv.ICO_PATH))
         # Build UI sizer
@@ -96,16 +98,13 @@ class UIFrame(wx.Frame):
         hbox1.AddSpacer(5)
         viewerSizer = self._buildRealWordSizer()
         hbox1.Add(viewerSizer, flag=wx.LEFT, border=2)
-        hbox1.AddSpacer(5)
-        hbox1.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 800),
+        hbox1.AddSpacer(10)
+        hbox1.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 900),
                                  style=wx.LI_VERTICAL), flag=flagsR, border=2)
-        hbox1.AddSpacer(5)
+        hbox1.AddSpacer(10)
         editorSizer = self._buildEditorSizer()
         hbox1.Add(editorSizer, flag=flagsR, border=2)
         mSizer.Add(hbox1, flag=flagsR, border=2)
-        self.collisionCB = wx.CheckBox(self, label = 'start to move')
-        self.collisionCB.Bind(wx.EVT_CHECKBOX, self.onMove)
-        mSizer.Add(self.collisionCB, flag=wx.LEFT, border=2)
         return mSizer
 
     def _buildRealWordSizer(self):
@@ -161,12 +160,6 @@ class UIFrame(wx.Frame):
     def onHelp(self, event):
         """ Pop-up the Help information window. """
         wx.MessageBox(HELP_MSG, 'Help', wx.OK)
-
-    def onMove(self, event):
-        """ Pop-up the Help information window. """
-        mvFlg = self.collisionCB.IsChecked()
-        print("set to move flag: %s" %str(mvFlg))
-        gv.iMapMgr.startMove(mvFlg)
 
 #-----------------------------------------------------------------------------
     def onLoadScenario(self, event):

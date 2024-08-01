@@ -123,6 +123,7 @@ class AgentRobot(AgentTarget):
         self.moveFlg = False
         self.crtPos = self.orgPos.copy()
         self.trajectory = [self.orgPos,]
+        self.moveTgtIdx = 0
 
     def backward(self, timeInv=5):
         self.moveFlg = False 

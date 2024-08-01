@@ -78,6 +78,13 @@ class PanelViewerCtrl(wx.Panel):
         sizer.Add(self.showPredictCB, flag=flagsL, border=2)
         sizer.AddSpacer(5)
 
+        self.showHeatMapCB = wx.CheckBox(self, label = 'Show Prediction Heatmap')
+        self.showHeatMapCB.Bind(wx.EVT_CHECKBOX, self.onShowHeatmap)
+        self.showHeatMapCB.SetValue(False)
+        sizer.Add(self.showHeatMapCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+
         return sizer
 
 
@@ -102,7 +109,9 @@ class PanelViewerCtrl(wx.Panel):
         flg = self.showPredictCB.IsChecked()
         gv.iRWMapPnl.setShowPredict(flg)
 
-
+    def onShowHeatmap(self, event):
+        flg = self.showHeatMapCB.IsChecked()
+        gv.iRWMapPnl.setShowHeatmap(flg)
 
     def _buildSimuCtrlSizer(self):
 
@@ -202,6 +211,11 @@ class PanelEditorCtrl(wx.Panel):
                                  style=wx.LI_VERTICAL), flag=flagsL, border=2)
         sizer.AddSpacer(10)
         sizer.Add(self._buildPredCtrlSizer(), flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
+                                 style=wx.LI_VERTICAL), flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+
         return sizer
         
 

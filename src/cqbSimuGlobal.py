@@ -54,6 +54,7 @@ def gDebugPrint(msg, prt=True, logType=None):
 
 #------<IMAGES PATH>-------------------------------------------------------------
 IMG_FD = os.path.join(dirpath, "img")
+HM_FD = os.path.join(dirpath, "heatmap")
 ICO_PATH = os.path.join(IMG_FD, "cqbIcon.png")
 BGIMG_PATH = os.path.join(IMG_FD, "SampleImg.png")
 
