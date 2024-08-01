@@ -23,8 +23,31 @@ class PanelRealworldMap(wx.Panel):
         #self.SetBackgroundColour(self.bgColor)
         self.panelSize = panelSize
         self.bgBmp = None
+
+        self.showRouteFlg = False
+        self.showDetectFlg = True
+        self.showTrajectoryFlg = True
+        self.showEnemyFlg = True 
+        self.showPredictFlg = False
+
         self.Bind(wx.EVT_PAINT, self.onPaint)
         self.SetDoubleBuffered(True)
+
+    def setShowDetect(self, flg):
+        self.showDetectFlg = flg
+
+    def setShowRoute(self, flg):
+        self.showRouteFlg = flg
+
+    def setShowTrajectory(self, flg):
+        self.showTrajectoryFlg = flg
+
+    def setShowEnemy(self, flg):
+        self.showEnemyFlg = flg
+
+    def setShowPredict(self, flg):
+        self.showPredictFlg = flg
+
 
     def onPaint(self, evt):
         """ Draw the map on the panel."""
@@ -43,24 +66,63 @@ class PanelRealworldMap(wx.Panel):
         if gv.iMapMgr:
             # draw the robot Orignal Pos 
             robotObj = gv.iMapMgr.getRobot()
-            dc.SetBrush(wx.Brush(wx.Colour(67, 138, 85)))
-
+            
             if robotObj:
-                trajectory = robotObj.getTrajectory()
-                print(trajectory)
-                dc.SetPen(wx.Pen(wx.Colour(67, 138, 85), 2, style=wx.PENSTYLE_LONG_DASH))
-                dc.DrawLines(trajectory)
-                dc.SetPen(self.defaultPen)
+                # Draw the route
+                if self.showRouteFlg:
+                    waypts = robotObj.getRoutePts()
+                    if len(waypts)>1:
+                        dc.SetPen(self.defaultPen)
+                        dc.DrawLines(waypts)
+                        for i, pt in enumerate(waypts):
+                            dc.DrawText("WP-%s %s" %(str(i), str(pt)), pt[0]+3, pt[1]+3)
+                
+                if self.showTrajectoryFlg:
+                    trajectory = robotObj.getTrajectory()
+                    # Draw trajectory
+                    dc.SetPen(wx.Pen(wx.Colour(197, 134, 192), 2, style=wx.PENSTYLE_LONG_DASH))
+                    dc.DrawLines(trajectory)
+                
+                # Draw robot position
                 pos = robotObj.getCrtPos()
+                if self.showDetectFlg:
+                    dc.SetPen(wx.Pen(wx.Colour(157, 204, 149), 1, style=wx.PENSTYLE_LONG_DASH))
+                    gdc = wx.GCDC(dc)
+                    gdc.SetBrush(wx.Brush(wx.Colour(157, 204, 149, 128)))  
+                    gdc.DrawEllipse(pos[0]-40, pos[1]-40, 80, 80)
+               
+                dc.SetBrush(wx.Brush(wx.Colour(67, 138, 85)))
+                dc.SetPen(self.defaultPen)
                 dc.DrawCircle(pos[0], pos[1], 8)
+
+
+
 
 
             # drow the enemy
-            dc.SetBrush(wx.Brush(wx.Colour("RED")))
-            enemies = gv.iMapMgr.getEnemy()
-            for enemyObj in enemies:
-                pos = enemyObj.getOrgPos()
-                dc.DrawCircle(pos[0], pos[1], 8)
+            if self.showEnemyFlg:
+                dc.SetPen(self.defaultPen)
+                dc.SetBrush(wx.Brush(wx.Colour("RED")))
+                enemies = gv.iMapMgr.getEnemy()
+                for enemyObj in enemies:
+                    pos = enemyObj.getOrgPos()
+                    dc.DrawCircle(pos[0], pos[1], 8)
+                    dc.SetTextForeground(wx.Colour("RED"))
+                    dc.DrawText("E-%s %s" %(str(enemyObj.getID()), str(pos)), pos[0]+3, pos[1]+3)
+            
+            # Draw the enemy predict pos
+            if self.showPredictFlg:
+                dc.SetPen(self.defaultPen)
+                dc.SetBrush(wx.Brush(wx.Colour("BLUE")))
+                enemies = gv.iMapMgr.getEnemy()
+                for enemyObj in enemies:
+                    pos = enemyObj.getPredPos()
+                    if pos is None: continue
+                    dc.DrawCircle(pos[0], pos[1], 8)
+                    dc.SetTextForeground(wx.Colour("BLUE"))
+                    dc.DrawText("P-%s %s" %(str(enemyObj.getID()), str(pos)), pos[0]+3, pos[1]+3)
+
+
 
 #--PanelImge--------------------------------------------------------------------
     def _scaleBitmap(self, bitmap, width, height):

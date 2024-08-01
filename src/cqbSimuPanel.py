@@ -19,7 +19,7 @@ import cqbSimuGlobal as gv
 
 class PanelViewerCtrl(wx.Panel):
 
-    def __init__(self, parent, panelSize=(640, 300)):
+    def __init__(self, parent, panelSize=(900, 300)):
         wx.Panel.__init__(self, parent, size=panelSize)
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
 
@@ -28,9 +28,82 @@ class PanelViewerCtrl(wx.Panel):
     def _buildUISizer(self):
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(5)
         sizer.Add(self._buildSimuCtrlSizer(), flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(900, -1),
+                                 style=wx.LI_HORIZONTAL), flag=wx.CENTER, border=2)
+        sizer.AddSpacer(5)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Display Control")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+        sizer.Add(self._buildDisplayCtrlSizer(), flag=flagsL, border=2)
+        return sizer
+
+
+    def _buildDisplayCtrlSizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.AddSpacer(10)
+        
+        self.showDetectCB = wx.CheckBox(self, label = 'Show Robot Detection Area')
+        self.showDetectCB.Bind(wx.EVT_CHECKBOX, self.onShowDetect)
+        self.showDetectCB.SetValue(False)
+        sizer.Add(self.showDetectCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+
+
+        self.showRouteCB = wx.CheckBox(self, label = 'Show Robot Route')
+        self.showRouteCB.Bind(wx.EVT_CHECKBOX, self.onShowRoute)
+        self.showRouteCB.SetValue(False)
+        sizer.Add(self.showRouteCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.showTrajectCB = wx.CheckBox(self, label = 'Show Robot Trajectory')
+        self.showTrajectCB.Bind(wx.EVT_CHECKBOX, self.onShowTrajectory)
+        self.showTrajectCB.SetValue(True)
+        sizer.Add(self.showTrajectCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.showEnemyCB = wx.CheckBox(self, label = 'Show Enemy')
+        self.showEnemyCB.Bind(wx.EVT_CHECKBOX, self.onShowEnemy)
+        self.showEnemyCB.SetValue(True)
+        sizer.Add(self.showEnemyCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.showPredictCB = wx.CheckBox(self, label = 'Show Enemy Prediction')
+        self.showPredictCB.Bind(wx.EVT_CHECKBOX, self.onShowEnemy)
+        self.showPredictCB.SetValue(True)
+        sizer.Add(self.showPredictCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
 
         return sizer
+
+
+    def onShowDetect(self, event):
+        flg = self.showDetectCB.IsChecked()
+        gv.iRWMapPnl.setShowDetect(flg)
+
+
+    def onShowRoute(self, event):
+        flg = self.showRouteCB.IsChecked()
+        gv.iRWMapPnl.setShowRoute(flg)
+
+    def onShowTrajectory(self, event):
+        flg = self.showTrajectCB.IsChecked()
+        gv.iRWMapPnl.setShowTrajectory(flg)
+
+    def onShowEnemy(self, event):
+        flg = self.showEnemyCB.IsChecked()
+        gv.iRWMapPnl.setShowEnemy(flg)
+
+    def onShowPredict(self, event):
+        flg = self.showPredictCB.IsChecked()
+        gv.iRWMapPnl.setShowPredict(flg)
+
 
 
     def _buildSimuCtrlSizer(self):
@@ -46,6 +119,7 @@ class PanelViewerCtrl(wx.Panel):
         label = wx.StaticText(self, label="Simulation Control")
         label.SetFont(font)
         sizer.Add(label, flag= wx.LEFT | wx.ALIGN_CENTER_VERTICAL, border=2)
+        sizer.AddSpacer(10)
 
         self.backBt = wx.BitmapButton(self, bitmap=backBmp,
                                        size=(backBmp.GetWidth()+5, backBmp.GetHeight()+5))
@@ -71,24 +145,40 @@ class PanelViewerCtrl(wx.Panel):
         sizer.Add(self.resetBt, flag=flagsL, border=2)
         sizer.AddSpacer(10)
 
+        stlabel = wx.StaticText(self, label="State : ")
+        stlabel.SetFont(font)
+        sizer.Add(stlabel, flag= wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, border=2)
+
+        self.stValLb = wx.StaticText(self, label="Paused")
+        self.stValLb.SetForegroundColour(wx.Colour(195, 60, 45))
+        self.stValLb.SetFont(font)
+        sizer.Add(self.stValLb, flag= wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, border=2)
         return sizer
 
     def startSimulation(self, event):
+        
         gv.gDebugPrint("Start simulation")
+        self.stValLb.SetForegroundColour(wx.Colour(67, 138, 85))
+        self.stValLb.SetLabel("Running")
         gv.iMapMgr.startMove(True)
 
     def pauseSimulation(self, event):
         gv.gDebugPrint("Pause simulation")
+        self.stValLb.SetForegroundColour(wx.Colour(195, 60, 45))
+        self.stValLb.SetLabel("Paused")
         gv.iMapMgr.startMove(False)
 
     def resetSimulation(self, event):
         gv.gDebugPrint("Reset simulation")
+        self.stValLb.SetForegroundColour(wx.Colour(195, 60, 45))
+        self.stValLb.SetLabel("Paused")
         gv.iMapMgr.resetBot()
 
     def backSimulation(self, event):
         gv.gDebugPrint("Back simulation")
+        self.stValLb.SetForegroundColour(wx.Colour(195, 60, 45))
+        self.stValLb.SetLabel("Paused")
         gv.iMapMgr.robotbackward()
-
 
 
 class PanelEditorCtrl(wx.Panel):

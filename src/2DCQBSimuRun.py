@@ -106,7 +106,6 @@ class UIFrame(wx.Frame):
         self.collisionCB = wx.CheckBox(self, label = 'start to move')
         self.collisionCB.Bind(wx.EVT_CHECKBOX, self.onMove)
         mSizer.Add(self.collisionCB, flag=wx.LEFT, border=2)
-
         return mSizer
 
     def _buildRealWordSizer(self):
