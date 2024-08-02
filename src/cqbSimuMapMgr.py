@@ -2,8 +2,10 @@
 #-----------------------------------------------------------------------------
 # Name:        cqbSimuMapMgr.py
 #
-# Purpose:     The UI management module used to control all the components on 
-#              the simulator map and update the components state. 
+# Purpose:     The UI management module is used to control all the components on 
+#              the simulator map, this module will provide the components init 
+#              agent class, calculate the components' read time state and the 
+#              manager to handle other module's components adjustment request.
 # 
 # Author:      Yuancheng Liu
 #
@@ -55,7 +57,6 @@ class AgentTarget(object):
     def getSelected(self):
         return self.selected
     
-    
     #--AgentTarget-----------------------------------------------------------------
     # Define all the set() functions here:
     def setSelected(self, selFlg):
@@ -75,6 +76,7 @@ class AgentEnemy(AgentTarget):
     """ Agent enemy class, inherit from the AgentTarget class. enemies are stationary"""
 
     def __init__(self, parent, tgtID, pos):
+        """ Init refer to the class <AgentTarget>. """
         super().__init__(parent, tgtID, pos, EMY_TYPE)
         self.predPos = None # predicted position of the target.
 
@@ -97,16 +99,16 @@ class AgentRobot(AgentTarget):
                     size. Defaults to 100.
         """
         super().__init__(parent, tgtID, pos, ROB_TYPE)
-        self.crtPos = pos.copy()    # Current robot position
-        self.routePts = [self.orgPos, ]      # route list
-        self.trajectory = [self.orgPos, ]    # trajectory list
+        self.crtPos = pos.copy()            # Current robot position
+        self.routePts = [self.orgPos, ]     # route list
+        self.trajectory = [self.orgPos, ]   # trajectory list
         self.trajectoryMaxSize = traMaxSize
-        
+        # Init the stepping through parameters
         self.traplayStepIdx = 0     # Curret position Idx in the trajectory list
-        self.traplayStepMode = False 
-
+        self.traplayStepMode = False  # stepping through mode
+        # Init the move paramters.
         self.moveFlg = False
-        self.moveTgtIdx = 0
+        self.moveTgtIdx = 0  # the target way point index in the planned route.
         self.moveSpeed = speed
 
     #-----------------------------------------------------------------------------
@@ -125,9 +127,32 @@ class AgentRobot(AgentTarget):
     def clearRoute(self):
         self.routePts = [self.orgPos,]
 
+    #-----------------------------------------------------------------------------
+    # robot move control functions 
     def isMoving(self):
         return self.moveFlg
 
+    def forward(self, timeInv=3):
+        """ Stepping through move the robot to the next position in the trajectory 
+        list based on the input clock cycle number (timeInv)."""
+        self.moveFlg = False
+        self.traplayStepMode = True
+        self.traplayStepIdx += timeInv
+        if self.traplayStepIdx >= len(self.trajectory):
+            self.traplayStepIdx = len(self.trajectory)-1
+        self.crtPos = self.trajectory[self.traplayStepIdx].copy()
+
+    def backward(self, timeInv=3):
+        """ Stepping through move the robot to the previous position in the trajectory 
+        list based on the input clock cycle number (timeInv)."""
+        self.moveFlg = False
+        self.traplayStepMode = True
+        self.traplayStepIdx -= timeInv
+        if self.traplayStepIdx < 0: self.traplayStepIdx = 0
+        self.crtPos = self.trajectory[self.traplayStepIdx].copy()
+
+    #-----------------------------------------------------------------------------
+    # Define all the get() functions here:
     def getCrtPos(self):
         return self.crtPos
 
@@ -137,47 +162,34 @@ class AgentRobot(AgentTarget):
     def getTrajectory(self):
         return self.trajectory.copy()
 
-    def setMoveFlag(self, moveFlg):
-        self.moveFlg = moveFlg
-
+    #-----------------------------------------------------------------------------
     def resetCrtPos(self):
+        """ Reset the robot position to orignal Pos."""
         self.moveFlg = False
         self.crtPos = self.orgPos.copy()
         self.trajectory = [self.orgPos,]
         self.moveTgtIdx = 0
+        self.traplayStepIdx = 0
+        self.traplayStepMode = False
 
-    def forward(self, timeInv=3):
-        self.moveFlg = False
-        self.traplayStepMode = True 
-        if self.traplayStepIdx + timeInv > len(self.trajectory)-1:
-            self.traplayStepIdx = len(self.trajectory)-1
-        else:
-            self.traplayStepIdx += timeInv
-            self.crtPos = self.trajectory[self.traplayStepIdx].copy()
-       
-    def backward(self, timeInv=3):
-        self.moveFlg = False
-        self.traplayStepMode = True 
-        if len(self.trajectory) < int(timeInv):
-            self.trajectory = [self.orgPos,]
-            self.traplayStepIdx = 0
-        else:
-            self.traplayStepIdx -= timeInv
-            if self.traplayStepIdx < 0: self.traplayStepIdx = 0
-            self.crtPos = self.trajectory[self.traplayStepIdx].copy()
+    #-----------------------------------------------------------------------------
+    # Define all the set() functions here:
+    def setMoveFlag(self, moveFlg):
+        self.moveFlg = moveFlg
 
+    #-----------------------------------------------------------------------------
     def updateCrtPos(self):
         """ Update the current train positions on the map. This function will be 
-            called periodicly.
+            called periodicly by the main frame UI clock.
         """
         if not self.moveFlg or len(self.routePts) == 1: return
         if self.traplayStepMode:
-            if self.traplayStepIdx < len(self.trajectory)-1:
+            if self.traplayStepIdx < len(self.trajectory):
                 self.crtPos = self.trajectory[self.traplayStepIdx].copy()
                 self.traplayStepIdx += 1
-                return
             else:
                 self.traplayStepMode = False
+            return
         else:
             # Update the current position under moving mode
             nextPt = self.routePts[self.moveTgtIdx]
@@ -194,12 +206,12 @@ class AgentRobot(AgentTarget):
             # Add the current pos to the trajectory
             self._addPosInTra(self.crtPos.copy())
 
-
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
-
 class MapMgr(object):
-
+    """ Map manager module to calculate and control all the interaction of map
+        components
+    """
     def __init__(self) -> None:
         self.robot = None
         self.enemys = []
@@ -209,9 +221,55 @@ class MapMgr(object):
         self.robot = AgentRobot(self, 0, pos)
 
     def addEnemy(self, pos):
-        id = len(self.enemys)
         self.enemys.append(AgentEnemy(self, self.enemysIdCount, pos))
         self.enemysIdCount += 1
+
+    def clearRobotRoute(self):
+        if self.robot: self.robot.clearRoute()
+
+    def checkSelected(self, posX, posY, threshold=8):
+        """ Check if the input position is near any of the map components. 
+            If yes, set the component as selected.
+        """
+        if self.robot:
+            if self.robot.checkNear(posX, posY, threshold):
+                gv.gDebugPrint("User selected the robot at pos %s" %str((posX, posY)), 
+                               logType=gv.LOG_INFO)
+                self.robot.setSelected(True)
+            else:
+                self.robot.setSelected(False)
+        for enemyObj in self.enemys:
+            if enemyObj.checkNear(posX, posY, threshold):
+                enemyObj.setSelected(True)
+                gv.gDebugPrint("User selected the enrmy at pos %s" %str((posX, posY)), 
+                               logType=gv.LOG_INFO)
+            else:
+                enemyObj.setSelected(False)
+        if gv.iEDCtrlPanel: gv.iEDCtrlPanel.updateSelectTargetInfo()
+
+    def deleteSelected(self):
+        if self.robot and self.robot.getSelected():
+            self.robot.setMoveFlag(False)
+            self.robot = None
+        for i, enemyObj in enumerate(self.enemys):
+            if enemyObj.getSelected():
+                self.enemys.pop(i)
+                return None
+
+    #-----------------------------------------------------------------------------
+    # Define all the get() functions here:
+    def getRobot(self):
+        return self.robot
+    
+    def getEnemy(self, id=None):
+        """ Return all enemy obj list if input id is None, else return the 
+            enemy obj with the input id. Return None if id not exist.
+        """
+        if id is None: return self.enemys
+        for enemyObj in self.enemys:
+            if enemyObj.getID() == id:
+                return enemyObj
+        return None 
 
     def getSelectedInfo(self):
         if self.robot and self.robot.getSelected():
@@ -220,47 +278,23 @@ class MapMgr(object):
             for enemyObj in self.enemys:
                 if enemyObj.getSelected():
                     return (enemyObj.getID(), enemyObj.getOrgPos(), 'Enemy')
-            return ('N.A', 'N.A', 'N.A')
+        return ('N.A', 'N.A', 'N.A')
 
-    def deleteSelected(self):
-        if self.robot and self.robot.getSelected():
-            self.robot = None
-        for i, enemyObj in enumerate(self.enemys):
-            if enemyObj.getSelected():
-                self.enemys.pop(i)
-
-    def getRobot(self):
-        return self.robot
-
-    def getEnemy(self, id=None):
-        if id is None:
-            return self.enemys
-        else:
-            for enemyObj in self.enemys:
-                if enemyObj.getID() == id:
-                    return enemyObj
-
-    def checkSelected(self, posX, posY, threshold=8):
-        if self.robot:
-            self.robot.setSelected(False)
-            if self.robot.checkNear(posX, posY, threshold):
-                self.robot.setSelected(True)
- 
+    #-----------------------------------------------------------------------------
+    def genRandomPred(self, ranRange=50):
+        """ Generate enemy random prediction positions based on the input range."""
         for enemyObj in self.enemys:
-            enemyObj.setSelected(False)
-            if enemyObj.checkNear(posX, posY, threshold):
-                enemyObj.setSelected(True)
+            pos = enemyObj.getOrgPos()
+            x = pos[0] + randint(-ranRange, ranRange)
+            y = pos[1] + randint(-ranRange, ranRange)
+            enemyObj.setPredPos([x, y])
 
-        if gv.iEDCtrlPanel: gv.iEDCtrlPanel.updateSelectTargetInfo()
-
-    def clearRobotRoute(self):
-        if self.robot:
-            self.robot.clearRoute()
-
+    #-----------------------------------------------------------------------------
     def periodic(self):
-        if self.robot: 
-            self.robot.updateCrtPos()
+        if self.robot: self.robot.updateCrtPos()
 
+    #-----------------------------------------------------------------------------
+    # robot control functions
     def startMove(self, moveFlag):
         self.robot.setMoveFlag(moveFlag)
 
@@ -272,10 +306,3 @@ class MapMgr(object):
 
     def robotforward(self, timeInv=3):
         self.robot.forward(timeInv=timeInv)
-
-    def genRandomPred(self):
-        for enemyObj in self.enemys:
-            pos = enemyObj.getOrgPos()
-            x = pos[0] + randint(-50, 50)
-            y = pos[1] + randint(-50, 50)
-            enemyObj.setPredPos([x, y])
