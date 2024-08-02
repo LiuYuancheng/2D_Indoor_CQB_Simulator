@@ -1,0 +1,17 @@
+# This is the config file template for the module <2DCQBSimuRun.py>
+# Setup the paramter with below format (every line follow <key>:<val> format, the
+# key can not be changed):
+
+#-----------------------------------------------------------------------------
+# Config section 00: Basic general parameter config.
+
+# Test mode:
+# True: use the real word internal logic to simulator the control logic. 
+# False: connect to PLC let plc control the signals 
+TEST_MD:False
+
+# Init the building floor blue print directory
+BP_DIR:floorBluePrint
+
+# Init the prediction heat map directory
+HM_DIR:heatmap

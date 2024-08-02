@@ -2,16 +2,16 @@
 #-----------------------------------------------------------------------------
 # Name:        2DCQBSimuRun.py
 #
-# Purpose:     This module is used as a sample to create the main wx frame.
-#
+# Purpose:     This module is the main wx Frame of the 2D Indoor CQB Simulator.
 #
 # Author:      Yuancheng Liu
 #
 # Created:     2024/07/30
-# Version:     v_0.0.1
+# Version:     v_0.1.1
 # Copyright:   Copyright (c) 2024 LiuYuancheng
 # License:     MIT License
 #-----------------------------------------------------------------------------
+
 import os
 import sys
 import time
@@ -23,6 +23,7 @@ import cqbSimuPanel as plFunc
 
 FRAME_SIZE = (1860, 930)
 PERIODIC = 500      # update in every 500ms
+
 HELP_MSG="""
 If there is any bug, please contact:
  - Author:      Yuancheng Liu 
@@ -40,16 +41,14 @@ class UIFrame(wx.Frame):
         wx.Frame.__init__(self, parent, id, title, size=FRAME_SIZE)
         # No boader frame:
         #wx.Frame.__init__(self, parent, id, title, style=wx.MINIMIZE_BOX | wx.STAY_ON_TOP)
+        self.SetIcon(wx.Icon(gv.ICO_PATH))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
-
+        # Init all the global paramters.
         self._initGlobals()
-
-        #self.SetTransparent(gv.gTranspPct*255//100)
+        # Build the UI components.
         self._buildMenuBar()
         self.statusbar = self.CreateStatusBar(1)
         self.statusbar.SetStatusText('Test mode: %s' %str(False))
-
-        self.SetIcon(wx.Icon(gv.ICO_PATH))
         # Build UI sizer
         self.SetSizer(self._buildUISizer())
         # Set the periodic call back
@@ -59,8 +58,7 @@ class UIFrame(wx.Frame):
         self.Bind(wx.EVT_TIMER, self.periodic)
         self.timer.Start(PERIODIC)  # every 500 ms
         self.Bind(wx.EVT_CLOSE, self.onClose)
-        gv.gDebugPrint("Metro-System real world main frame inited.", logType=gv.LOG_INFO)
-
+        gv.gDebugPrint("%s main frame inited." %str(gv.UI_TITLE), logType=gv.LOG_INFO)
 
     def _initGlobals(self):
         """ Init the global parameters. """
@@ -71,11 +69,11 @@ class UIFrame(wx.Frame):
         """ Creat the top function menu bar."""
         # Add the config menu
         menubar = wx.MenuBar()
-        # Load scenario drop menu
+        # Load build blue print drop down menu
         configMenu = wx.Menu()
         scenarioItem = wx.MenuItem(configMenu, 100, text="Load Building BluePrint", kind=wx.ITEM_NORMAL)
         configMenu.Append(scenarioItem)
-        self.Bind(wx.EVT_MENU, self.onLoadScenario, scenarioItem)
+        self.Bind(wx.EVT_MENU, self.onLoadBlueprint, scenarioItem)
         menubar.Append(configMenu, '&Config')
         # Add the about menu.
         helpMenu = wx.Menu()
@@ -87,64 +85,68 @@ class UIFrame(wx.Frame):
 
 #--UIFrame---------------------------------------------------------------------
     def _buildUISizer(self):
-        """ Build the main UI Sizer. """
+        """ Build the frame main UI Sizer."""
         flagsR = wx.CENTER
-
         mSizer = wx.BoxSizer(wx.VERTICAL)        
         mSizer.AddSpacer(5)
-
-        # Add the image panel
+        # row idx = 0 
         hbox1 = wx.BoxSizer(wx.HORIZONTAL)
         hbox1.AddSpacer(5)
+        # A the viewer sizer.
         viewerSizer = self._buildRealWordSizer()
         hbox1.Add(viewerSizer, flag=wx.LEFT, border=2)
+        #
         hbox1.AddSpacer(10)
         hbox1.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 900),
                                  style=wx.LI_VERTICAL), flag=flagsR, border=2)
         hbox1.AddSpacer(10)
+        # Add the editor sizer.
         editorSizer = self._buildEditorSizer()
         hbox1.Add(editorSizer, flag=flagsR, border=2)
         mSizer.Add(hbox1, flag=flagsR, border=2)
         return mSizer
 
+#--UIFrame---------------------------------------------------------------------
     def _buildRealWordSizer(self):
-        """ Build the real world display sizer. """
+        """ Build the real world display (viewer) sizer."""
         flagsL = wx.LEFT
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(5)
         font = wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
-        label = wx.StaticText(self, label="CQB Simulation Viewer")
+        label = wx.StaticText(self, label="Indoor CQB Simulation Viewer")
         label.SetFont(font)
         vbox.Add(label, flag=wx.CENTER, border=2)
-        vbox.AddSpacer(5)        
-
+        vbox.AddSpacer(5)
+        # Add the display panel
         gv.iRWMapPnl = plMap.PanelRealworldMap(self)
         vbox.Add(gv.iRWMapPnl, flag=flagsL, border=2)
         vbox.AddSpacer(5)
+        # Added the control panel
         gv.iRWCtrlPanel = plFunc.PanelViewerCtrl(self)
         vbox.Add(gv.iRWCtrlPanel, flag=flagsL, border=2)
         vbox.AddSpacer(5)
-
         return vbox
 
-
+#--UIFrame---------------------------------------------------------------------
     def _buildEditorSizer(self):
+        """ Build the editor sizer."""
         flagsL = wx.LEFT
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(5)
         font = wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
-        label = wx.StaticText(self, label="CQB Simulation Editor")
+        label = wx.StaticText(self, label="Indoor CQB Simulation Editor")
         label.SetFont(font)
         vbox.Add(label, flag=wx.CENTER, border=2)
         vbox.AddSpacer(5)
+        # Add the display panel
         gv.iEDMapPnl = plMap.PanelEditorMap(self)
         vbox.Add(gv.iEDMapPnl, flag=wx.CENTER, border=2)
         vbox.AddSpacer(5)
+        # Add the display panel
         gv.iEDCtrlPanel = plFunc.PanelEditorCtrl(self)
         vbox.Add(gv.iEDCtrlPanel, flag=flagsL, border=2)
-
+        vbox.AddSpacer(5)
         return vbox
-
 
 #--UIFrame---------------------------------------------------------------------
     def periodic(self, event):
@@ -157,13 +159,9 @@ class UIFrame(wx.Frame):
             gv.iRWMapPnl.updateDisplay()
 
 #-----------------------------------------------------------------------------
-    def onHelp(self, event):
-        """ Pop-up the Help information window. """
-        wx.MessageBox(HELP_MSG, 'Help', wx.OK)
-
-#-----------------------------------------------------------------------------
-    def onLoadScenario(self, event):
-        openFileDialog = wx.FileDialog(self, "Open", gv.dirpath, "", 
+    def onLoadBlueprint(self, event):
+        """ Handle load the build blue print image."""
+        openFileDialog = wx.FileDialog(self, "Open", gv.gBluePrintDir, "", 
             "Packet Capture Files (*.jpg;*.png;*.bmp)|*.jpg;*.png;*.bmp", 
             wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         openFileDialog.ShowModal()
@@ -177,6 +175,11 @@ class UIFrame(wx.Frame):
         if gv.iEDMapPnl: gv.iEDMapPnl.updateBitmap(gv.gBluePrintBM)
         gv.iRWMapPnl.updateDisplay()
         gv.iEDMapPnl.updateDisplay()
+
+#-----------------------------------------------------------------------------
+    def onHelp(self, event):
+        """ Pop-up the Help information window. """
+        wx.MessageBox(HELP_MSG, 'Help', wx.OK)
 
 #-----------------------------------------------------------------------------
     def onClose(self, evt):

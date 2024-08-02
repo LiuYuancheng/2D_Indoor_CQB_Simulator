@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Name:        uiGlobal.py
+# Name:        cqbSimuGlobal.py
 #
 # Purpose:     This module is used as a local config file to set constants, 
 #              global parameters which will be used in the other modules.
@@ -15,9 +15,9 @@ import os
 import sys
 
 print("Current working directory is : %s" % os.getcwd())
-dirpath = os.path.dirname(__file__)
+dirpath = os.path.dirname(os.path.abspath(__file__))
 print("Current source code location : %s" % dirpath)
-APP_NAME = ('PhysicalWoldSimulator', 'PWS_UI')
+APP_NAME = ('CQB_Simulator', 'PWS_UI')
 
 UI_TITLE = "2D Indoor CQB Simulator"
 
@@ -31,6 +31,13 @@ if os.path.exists(gLibDir):
     print("Import all the lib-module from folder : %s" %str(gLibDir))
     sys.path.insert(0, gLibDir)
 
+#------<IMAGES PATH>-------------------------------------------------------------
+IMG_FD = os.path.join(dirpath, "img")
+ICO_PATH = os.path.join(IMG_FD, "cqbIcon.png")
+
+#-----------------------------------------------------------------------------
+# Init the logger:
+# find the lib directory
 import Log
 Log.initLogger(gTopDir, 'Logs', APP_NAME[0], APP_NAME[1], historyCnt=100, fPutLogsUnderDate=True)
 
@@ -52,22 +59,31 @@ def gDebugPrint(msg, prt=True, logType=None):
     elif logType == LOG_INFO or DEBUG_FLG:
         Log.info(msg)
 
-#------<IMAGES PATH>-------------------------------------------------------------
-IMG_FD = os.path.join(dirpath, "img")
-HM_FD = os.path.join(dirpath, "heatmap")
-ICO_PATH = os.path.join(IMG_FD, "cqbIcon.png")
-BGIMG_PATH = os.path.join(IMG_FD, "SampleImg.png")
+#-----------------------------------------------------------------------------
+# Init the configure file loader.
+import ConfigLoader
+CONFIG_FILE_NAME = 'Config.txt'
+gGonfigPath = os.path.join(dirpath, CONFIG_FILE_NAME)
+iConfigLoader = ConfigLoader.ConfigLoader(gGonfigPath, mode='r')
+if iConfigLoader is None:
+    print("Error: The config file %s is not exist.Program exit!" %str(gGonfigPath))
+    exit()
+
+CONFIG_DICT = iConfigLoader.getJson()
 
 #-------<GLOBAL VARIABLES (start with "g")>------------------------------------
 # VARIABLES are the built in data type.
+gBluePrintDir = CONFIG_DICT['BP_DIR']
 gBluePrintBM = None
+gHeatMapDir = CONFIG_DICT['HM_DIR']
+
 gTranspPct = 70     # Windows transparent percentage.
 gUpdateRate = 1     # main frame update rate 1 sec.
 
 #-------<GLOBAL PARAMTERS>-----------------------------------------------------
 iMainFrame = None   # MainFrame.
-iRWMapPnl = None  # Image panel.
-iEDMapPnl = None   # Edit panel.
-iMapMgr = None
+iRWMapPnl = None    # Image panel.
+iEDMapPnl = None    # Edit panel.
 iEDCtrlPanel = None   # editer control panel
 iRWCtrlPanel = None   # read only control panel
+iMapMgr = None

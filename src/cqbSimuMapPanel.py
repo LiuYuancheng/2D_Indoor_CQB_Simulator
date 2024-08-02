@@ -26,7 +26,7 @@ class PanelRealworldMap(wx.Panel):
         self.toggle = False 
         self.bgBmp = None
         self.heatMapBmp = None
-        self.heatMapBmp = wx.Bitmap(os.path.join(gv.HM_FD, 'transparent_image.png'), wx.BITMAP_TYPE_ANY)
+        self.heatMapBmp = wx.Bitmap(os.path.join(gv.gHeatMapDir, 'transparent_image.png'), wx.BITMAP_TYPE_ANY)
 
         self.showRouteFlg = False
         self.showDetectFlg = True
