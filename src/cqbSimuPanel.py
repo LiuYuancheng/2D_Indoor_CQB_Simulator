@@ -15,9 +15,10 @@
 #-----------------------------------------------------------------------------
 import os 
 import wx
+from datetime import datetime
 
 import cqbSimuGlobal as gv
-
+from ConfigLoader import JsonLoader
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelViewerCtrl(wx.Panel):
@@ -213,7 +214,7 @@ class PanelViewerCtrl(wx.Panel):
 class PanelEditorCtrl(wx.Panel):
     """ Control Panel for the change the editor diaplay map setting."""
 
-    def __init__(self, parent, panelSize=(640, 300)):
+    def __init__(self, parent, panelSize=(800, 300)):
         wx.Panel.__init__(self, parent, size=panelSize)
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         self.SetSizer(self._buildUISizer())
@@ -241,6 +242,8 @@ class PanelEditorCtrl(wx.Panel):
         sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
                                  style=wx.LI_VERTICAL), flag=flagsL, border=2)
         sizer.AddSpacer(10)
+        # prediction control sizer
+        sizer.Add(self._buildScenCtrloSizer(), flag=flagsL, border=2)
         return sizer
         
     #-----------------------------------------------------------------------------
@@ -311,6 +314,8 @@ class PanelEditorCtrl(wx.Panel):
         self.rmTgtbtn.Bind(wx.EVT_BUTTON, self.onRemoveTarget)
         sizer.Add(self.rmTgtbtn, flag=flagsL, border=2)
         sizer.AddSpacer(10)
+        sizer.Add(wx.StaticText(self, label="Robot Route Control:"), flag=flagsL, border=2)
+        sizer.AddSpacer(5)
         # Robot route planning enable cb. 
         self.routePlanCB = wx.CheckBox(self, label = 'Plan Robot Route')
         self.routePlanCB.Bind(wx.EVT_CHECKBOX, self.onEnableRoutePlan)
@@ -341,6 +346,22 @@ class PanelEditorCtrl(wx.Panel):
         return sizer
 
     #-----------------------------------------------------------------------------
+    def _buildScenCtrloSizer(self):
+        """ Scenario control sizer. """
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(5)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Scenario Control")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+        self.sceSavebtn = wx.Button(self, -1, "Save Current Scenario")
+        self.sceSavebtn.Bind(wx.EVT_BUTTON, self.onSaveScensrio)
+        sizer.Add(self.sceSavebtn, flag=flagsL, border=2)
+        return sizer
+
+    #-----------------------------------------------------------------------------
     # Define all the event handling function here
     def onRemoveTarget(self, evt):
         if gv.iMapMgr: gv.iMapMgr.deleteSelected()
@@ -355,7 +376,7 @@ class PanelEditorCtrl(wx.Panel):
     def onEnableRoutePlan(self, evt):
         if gv.iEDMapPnl: 
             gv.gDebugPrint("Start to plan a robot route", logType=gv.LOG_INFO)
-            gv.iEDMapPnl.enableWaypt(self.routePlanCB.IsChecked())
+            gv.iEDMapPnl.enableAddWaypt(self.routePlanCB.IsChecked())
 
     def onEnableWPInfo(self, evt):
         if gv.iEDMapPnl: gv.iEDMapPnl.enableWPInfo(self.showWPInfoCB.IsChecked())
@@ -364,6 +385,31 @@ class PanelEditorCtrl(wx.Panel):
     def onGeneratePred(self, evt):
         if gv.iMapMgr: gv.iMapMgr.genRandomPred()
     
+    def onSaveScensrio(self, evt):
+        data = {
+            "bluePrint":  gv.gBluePrintFilePath,
+            "robot": None,
+            "enemt":[]
+        }
+        robotObj = gv.iMapMgr.getRobot()
+        if robotObj:
+            data["robot"] = {
+                'id': robotObj.getID(),
+                'pos': robotObj.getOrgPos(),
+                'route': robotObj.getRoutePts()
+            }
+        enemryList = gv.iMapMgr.getEnemy()
+        for enemyObj in enemryList:
+            data["enemt"].append([enemyObj.getID(), enemyObj.getOrgPos()])
+        saver = JsonLoader()
+        now = datetime.now() # current date and time
+        date_time = now.strftime("%m_%d_%Y_%H_%M_%S")
+        filePath = os.path.join(gv.gScearioDir, "Scenario_%s.json" %str(date_time))
+        saver.setJsonFilePath(filePath)
+        saver.setJsonData(data)
+        gv.gDebugPrint("onSaveScensrio()> Save current scenario to file: %s" %filePath, logType=gv.LOG_INFO)
+        saver.updateRcdFile()
+
     def setBPInfo(self, bpInfo):
         """Set the blue print info. """
         self.bpval.SetValue(bpInfo)

@@ -71,9 +71,13 @@ class UIFrame(wx.Frame):
         menubar = wx.MenuBar()
         # Load build blue print drop down menu
         configMenu = wx.Menu()
-        scenarioItem = wx.MenuItem(configMenu, 100, text="Load Building BluePrint", kind=wx.ITEM_NORMAL)
-        configMenu.Append(scenarioItem)
-        self.Bind(wx.EVT_MENU, self.onLoadBlueprint, scenarioItem)
+        blueprintItem = wx.MenuItem(configMenu, 100, text="Load Building BluePrint", kind=wx.ITEM_NORMAL)
+        configMenu.Append(blueprintItem)
+        self.Bind(wx.EVT_MENU, self.onLoadBlueprint, blueprintItem)
+        
+        #scerioLDItem = wx.MenuItem(configMenu, 100, text="Load Scenario", kind=wx.ITEM_NORMAL)
+        #configMenu.Append(scerioLDItem)
+        #self.Bind(wx.EVT_MENU, self.onLoadScenario, scerioLDItem)
         menubar.Append(configMenu, '&Config')
         # Add the about menu.
         helpMenu = wx.Menu()
@@ -161,8 +165,27 @@ class UIFrame(wx.Frame):
 #-----------------------------------------------------------------------------
     def onLoadBlueprint(self, event):
         """ Handle load the build blue print image."""
-        openFileDialog = wx.FileDialog(self, "Open", gv.gBluePrintDir, "", 
+        openFileDialog = wx.FileDialog(self, "Open Blue Print File", gv.gBluePrintDir, "", 
             "Packet Capture Files (*.jpg;*.png;*.bmp)|*.jpg;*.png;*.bmp", 
+            wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        openFileDialog.ShowModal()
+        bpPath = str(openFileDialog.GetPath())
+        filename = str(openFileDialog.GetFilename())
+        gv.gBluePrintFilePath = bpPath
+        openFileDialog.Destroy()
+        if filename == "": return
+        gv.gBluePrintBM = wx.Bitmap(bpPath, wx.BITMAP_TYPE_ANY)
+        if gv.iEDCtrlPanel: gv.iEDCtrlPanel.setBPInfo(filename)
+        if gv.iRWMapPnl: gv.iRWMapPnl.updateBitmap(gv.gBluePrintBM)
+        if gv.iEDMapPnl: gv.iEDMapPnl.updateBitmap(gv.gBluePrintBM)
+        gv.iRWMapPnl.updateDisplay()
+        gv.iEDMapPnl.updateDisplay()
+
+#-----------------------------------------------------------------------------
+    def onLoadScenario(self, event):
+        """ Handle load scenario"""
+        openFileDialog = wx.FileDialog(self, "Open Scenario JSON File", gv.gScearioDir, "", 
+            "Packet Capture Files (*.json)|*.json", 
             wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         openFileDialog.ShowModal()
         bpPath = str(openFileDialog.GetPath())
@@ -175,6 +198,8 @@ class UIFrame(wx.Frame):
         if gv.iEDMapPnl: gv.iEDMapPnl.updateBitmap(gv.gBluePrintBM)
         gv.iRWMapPnl.updateDisplay()
         gv.iEDMapPnl.updateDisplay()
+
+
 
 #-----------------------------------------------------------------------------
     def onHelp(self, event):

@@ -73,7 +73,9 @@ CONFIG_DICT = iConfigLoader.getJson()
 
 #-------<GLOBAL VARIABLES (start with "g")>------------------------------------
 # VARIABLES are the built in data type.
-gBluePrintDir = CONFIG_DICT['BP_DIR']
+gBluePrintDir = os.path.join(dirpath,CONFIG_DICT['BP_DIR'])
+gScearioDir = os.path.join(dirpath, CONFIG_DICT['SC_DIR'])
+gBluePrintFilePath = None 
 gBluePrintBM = None
 gHeatMapDir = CONFIG_DICT['HM_DIR']
 
