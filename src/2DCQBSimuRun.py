@@ -184,13 +184,7 @@ class UIFrame(wx.Frame):
 #-----------------------------------------------------------------------------
     def onLoadScenario(self, event):
         """ Handle load scenario"""
-        openFileDialog = wx.FileDialog(self, "Open Scenario JSON File", gv.gScearioDir, "", 
-            "Packet Capture Files (*.json)|*.json", 
-            wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
-        openFileDialog.ShowModal()
-        bpPath = str(openFileDialog.GetPath())
-        filename = str(openFileDialog.GetFilename())
-        openFileDialog.Destroy()
+       
         if filename == "": return
         gv.gBluePrintBM = wx.Bitmap(bpPath, wx.BITMAP_TYPE_ANY)
         if gv.iEDCtrlPanel: gv.iEDCtrlPanel.setBPInfo(filename)

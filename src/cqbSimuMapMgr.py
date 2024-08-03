@@ -296,7 +296,22 @@ class MapMgr(object):
     #-----------------------------------------------------------------------------
     # robot control functions
     def startMove(self, moveFlag):
-        self.robot.setMoveFlag(moveFlag)
+        if self.robot: self.robot.setMoveFlag(moveFlag)
+
+    def setRobot(self, id, pos, route):
+        self.initRobot(pos)
+        for wayPt in route:
+            self.robot.addWayPt(wayPt)
+
+    def setEnemy(self, enemyDict):
+        for info in enemyDict:
+            id, pos = info
+            self.addEnemy(pos)
+
+    def reInit(self):
+        self.robot = None
+        self.enemys = []
+        self.enemysIdCount = 0
 
     def resetBot(self):
         self.robot.resetCrtPos()
@@ -306,3 +321,5 @@ class MapMgr(object):
 
     def robotforward(self, timeInv=3):
         self.robot.forward(timeInv=timeInv)
+
+    

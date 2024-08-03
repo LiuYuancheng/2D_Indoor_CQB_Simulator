@@ -65,7 +65,7 @@ class PanelRealworldMap(wx.Panel):
             if self.showRouteFlg:
                 waypts = robotObj.getRoutePts()
                 if len(waypts) > 1:
-                    pen = wx.Pen(wx.Colour(197, 134, 192), 1, style=wx.PENSTYLE_LONG_DASH) if self.toggle else self.defaultPen
+                    pen = wx.Pen(wx.Colour("GREEN"), 1, style=wx.PENSTYLE_LONG_DASH) if self.toggle else self.defaultPen
                     dc.SetPen(pen)
                     dc.DrawLines(waypts)
                     for i, pt in enumerate(waypts):

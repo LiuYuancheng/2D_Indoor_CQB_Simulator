@@ -359,6 +359,10 @@ class PanelEditorCtrl(wx.Panel):
         self.sceSavebtn = wx.Button(self, -1, "Save Current Scenario")
         self.sceSavebtn.Bind(wx.EVT_BUTTON, self.onSaveScensrio)
         sizer.Add(self.sceSavebtn, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+        self.sceLoadbtn = wx.Button(self, -1, "Load Saved Scenario")
+        self.sceLoadbtn.Bind(wx.EVT_BUTTON, self.onLoadScensrio)
+        sizer.Add(self.sceLoadbtn, flag=flagsL, border=2)
         return sizer
 
     #-----------------------------------------------------------------------------
@@ -389,7 +393,7 @@ class PanelEditorCtrl(wx.Panel):
         data = {
             "bluePrint":  gv.gBluePrintFilePath,
             "robot": None,
-            "enemt":[]
+            "enemy":[]
         }
         robotObj = gv.iMapMgr.getRobot()
         if robotObj:
@@ -400,7 +404,7 @@ class PanelEditorCtrl(wx.Panel):
             }
         enemryList = gv.iMapMgr.getEnemy()
         for enemyObj in enemryList:
-            data["enemt"].append([enemyObj.getID(), enemyObj.getOrgPos()])
+            data["enemy"].append([enemyObj.getID(), enemyObj.getOrgPos()])
         saver = JsonLoader()
         now = datetime.now() # current date and time
         date_time = now.strftime("%m_%d_%Y_%H_%M_%S")
@@ -409,6 +413,31 @@ class PanelEditorCtrl(wx.Panel):
         saver.setJsonData(data)
         gv.gDebugPrint("onSaveScensrio()> Save current scenario to file: %s" %filePath, logType=gv.LOG_INFO)
         saver.updateRcdFile()
+
+    def onLoadScensrio(self, evt):
+        openFileDialog = wx.FileDialog(self, "Open Scenario JSON File", gv.gScearioDir, "", 
+            "Packet Capture Files (*.json)|*.json", 
+            wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        openFileDialog.ShowModal()
+        scenarioPath = str(openFileDialog.GetPath())
+        filename = str(openFileDialog.GetFilename())
+        openFileDialog.Destroy()
+        loader = JsonLoader()
+        loader.loadFile(scenarioPath)
+        gv.iMapMgr.startMove(False)
+        gv.iMapMgr.reInit()
+        data = loader.getJsonData()
+        bpPath = data['bluePrint']
+        gv.gBluePrintBM = wx.Bitmap(bpPath, wx.BITMAP_TYPE_ANY)
+        if gv.iEDCtrlPanel: gv.iEDCtrlPanel.setBPInfo(filename)
+        if gv.iRWMapPnl: gv.iRWMapPnl.updateBitmap(gv.gBluePrintBM)
+        if gv.iEDMapPnl: gv.iEDMapPnl.updateBitmap(gv.gBluePrintBM)
+        robotInfo = data["robot"]
+        gv.iMapMgr.setRobot(robotInfo['id'], robotInfo['pos'], robotInfo['route'])
+        gv.iMapMgr.setEnemy(data['enemy'])
+        gv.iRWMapPnl.updateDisplay()
+        gv.iEDMapPnl.updateDisplay()
+        gv.gDebugPrint("onLoadScensrio()> Load scenario from file: %s" %filename, logType=gv.LOG_INFO)
 
     def setBPInfo(self, bpInfo):
         """Set the blue print info. """
