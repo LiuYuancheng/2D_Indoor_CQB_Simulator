@@ -182,20 +182,6 @@ class UIFrame(wx.Frame):
         gv.iEDMapPnl.updateDisplay()
 
 #-----------------------------------------------------------------------------
-    def onLoadScenario(self, event):
-        """ Handle load scenario"""
-       
-        if filename == "": return
-        gv.gBluePrintBM = wx.Bitmap(bpPath, wx.BITMAP_TYPE_ANY)
-        if gv.iEDCtrlPanel: gv.iEDCtrlPanel.setBPInfo(filename)
-        if gv.iRWMapPnl: gv.iRWMapPnl.updateBitmap(gv.gBluePrintBM)
-        if gv.iEDMapPnl: gv.iEDMapPnl.updateBitmap(gv.gBluePrintBM)
-        gv.iRWMapPnl.updateDisplay()
-        gv.iEDMapPnl.updateDisplay()
-
-
-
-#-----------------------------------------------------------------------------
     def onHelp(self, event):
         """ Pop-up the Help information window. """
         wx.MessageBox(HELP_MSG, 'Help', wx.OK)

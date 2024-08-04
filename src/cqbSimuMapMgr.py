@@ -23,6 +23,17 @@ ROB_TYPE = 0
 EMY_TYPE = 1
 PRE_TYPE = 2
 
+DIR_DICT = {
+    'upleft': (-1, -1),
+    'up': (0, -1),
+    'upright': (1, -1),
+    'left': (-1, 0),
+    'return': (0, 0),
+    'right': (1, 0),
+    'downleft': (-1, 1),
+    'down': (0, 1),
+    'downright': (1, 1)
+}
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class AgentTarget(object):
@@ -107,9 +118,11 @@ class AgentRobot(AgentTarget):
         self.traplayStepIdx = 0     # Curret position Idx in the trajectory list
         self.traplayStepMode = False  # stepping through mode
         # Init the move paramters.
-        self.moveFlg = False
+        self.autoMoveFlg = False
         self.moveTgtIdx = 0  # the target way point index in the planned route.
         self.moveSpeed = speed
+        self.manualCtrl = False
+        self.direction = DIR_DICT['return']
 
     #-----------------------------------------------------------------------------
     def _addPosInTra(self, pos):
@@ -130,12 +143,12 @@ class AgentRobot(AgentTarget):
     #-----------------------------------------------------------------------------
     # robot move control functions 
     def isMoving(self):
-        return self.moveFlg
+        return self.autoMoveFlg
 
     def forward(self, timeInv=3):
         """ Stepping through move the robot to the next position in the trajectory 
         list based on the input clock cycle number (timeInv)."""
-        self.moveFlg = False
+        self.autoMoveFlg = False
         self.traplayStepMode = True
         self.traplayStepIdx += timeInv
         if self.traplayStepIdx >= len(self.trajectory):
@@ -145,7 +158,7 @@ class AgentRobot(AgentTarget):
     def backward(self, timeInv=3):
         """ Stepping through move the robot to the previous position in the trajectory 
         list based on the input clock cycle number (timeInv)."""
-        self.moveFlg = False
+        self.autoMoveFlg = False
         self.traplayStepMode = True
         self.traplayStepIdx -= timeInv
         if self.traplayStepIdx < 0: self.traplayStepIdx = 0
@@ -165,7 +178,7 @@ class AgentRobot(AgentTarget):
     #-----------------------------------------------------------------------------
     def resetCrtPos(self):
         """ Reset the robot position to orignal Pos."""
-        self.moveFlg = False
+        self.autoMoveFlg = False
         self.crtPos = self.orgPos.copy()
         self.trajectory = [self.orgPos,]
         self.moveTgtIdx = 0
@@ -174,15 +187,35 @@ class AgentRobot(AgentTarget):
 
     #-----------------------------------------------------------------------------
     # Define all the set() functions here:
-    def setMoveFlag(self, moveFlg):
-        self.moveFlg = moveFlg
+    def setMoveFlag(self, autoMoveFlg):
+        """ Set auto movement flag."""
+        self.autoMoveFlg = autoMoveFlg
+        self.manualCtrl = False 
+
+    def setManualControl(self, manualCtrl):
+        self.manualCtrl = manualCtrl
+        if manualCtrl:
+            self.autoMoveFlg = False
+        else:
+            self.autoMoveFlg = True 
+
+    def setMoveDir(self, dir):
+        if self.manualCtrl and str(dir) in DIR_DICT.keys():
+            self.direction = DIR_DICT[str(dir)]
 
     #-----------------------------------------------------------------------------
     def updateCrtPos(self):
         """ Update the current train positions on the map. This function will be 
             called periodicly by the main frame UI clock.
         """
-        if not self.moveFlg or len(self.routePts) == 1: return
+        # Manual move control 
+        if self.manualCtrl:
+            self.crtPos[0] += self.direction[0]*self.moveSpeed
+            self.crtPos[1] += self.direction[1]*self.moveSpeed
+            self._addPosInTra(self.crtPos.copy())
+            return
+        # Auto move control 
+        if not self.autoMoveFlg or len(self.routePts) == 1 : return
         if self.traplayStepMode:
             if self.traplayStepIdx < len(self.trajectory):
                 self.crtPos = self.trajectory[self.traplayStepIdx].copy()
@@ -199,7 +232,7 @@ class AgentRobot(AgentTarget):
                 if self.moveTgtIdx < len(self.routePts)-1: 
                     self.moveTgtIdx +=1
                 else:
-                    self.moveFlg = False
+                    self.autoMoveFlg = False
             else:
                 self.crtPos[0] += int((nextPt[0] - self.crtPos[0])*1.0/dist * self.moveSpeed)
                 self.crtPos[1] += int((nextPt[1] - self.crtPos[1])*1.0/dist * self.moveSpeed)
@@ -307,6 +340,12 @@ class MapMgr(object):
         for info in enemyDict:
             id, pos = info
             self.addEnemy(pos)
+
+    def setRobotManualMove(self, moveFlag, dirStr):
+        if self.robot:
+            self.robot.setManualControl(moveFlag)
+            if moveFlag:
+                self.robot.setMoveDir(dirStr)
 
     def reInit(self):
         self.robot = None

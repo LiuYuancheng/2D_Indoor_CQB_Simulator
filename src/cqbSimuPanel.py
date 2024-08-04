@@ -42,7 +42,20 @@ class PanelViewerCtrl(wx.Panel):
                                  style=wx.LI_HORIZONTAL), flag=wx.CENTER, border=2)
         sizer.AddSpacer(5)
         # Add the display control panel.
-        sizer.Add(self._buildDisplayCtrlSizer(), flag=flagsL, border=2)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(self._buildDisplayCtrlSizer(), flag=flagsL, border=2)
+        hbox.AddSpacer(10)
+        hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
+                                 style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
+        hbox.AddSpacer(10)
+        hbox.Add(self._buildRobotCtrlSizer() , flag=flagsL, border=2)
+
+        sizer.Add(hbox, flag=flagsL, border=2)
+        hbox.AddSpacer(10)
+        hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
+                                 style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
+        hbox.AddSpacer(10)
+
         sizer.AddSpacer(5)
         return sizer
 
@@ -151,6 +164,31 @@ class PanelViewerCtrl(wx.Panel):
         sizer.Add(self.showHeatMapCB, flag=flagsL, border=2)
         sizer.AddSpacer(5)
         return sizer
+    
+    #-----------------------------------------------------------------------------
+    def _buildRobotCtrlSizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Robot Control")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
+        gSizer = wx.GridSizer(3, 3, 2, 2)
+        buttonDetail = [ ('upL.png', 'upleft'), ('up.png', 'up'), ('upR.png', 'upright'),
+                         ('left.png', 'left'), ('load.png', 'return'), ('right.png', 'right'),
+                         ('downL.png', 'downleft'), ('down.png', 'down'), ('downR.png', 'downright') 
+        ]
+        for btnInfo in buttonDetail:
+            btnFile, btnName = btnInfo
+            bmp = wx.Bitmap(os.path.join(gv.IMG_FD, btnFile), wx.BITMAP_TYPE_ANY)
+            movBtn = wx.BitmapButton(self, id=wx.ID_ANY, bitmap=bmp, size=(
+                        bmp.GetWidth()+4, bmp.GetHeight()+4), name=btnName)
+            movBtn.Bind(wx.EVT_BUTTON, self.onRobotMove)
+            gSizer.Add(movBtn, flag=flagsL, border=0)
+
+        sizer.Add(gSizer, flag=flagsL, border=2)
+        return sizer
+
     #-----------------------------------------------------------------------------
     # define all the play button event handling function here.
     def startSimulation(self, event):
@@ -208,6 +246,13 @@ class PanelViewerCtrl(wx.Panel):
     def onShowHeatmap(self, event):
         flg = self.showHeatMapCB.IsChecked()
         gv.iRWMapPnl.setShowHeatmap(flg)
+
+    def onRobotMove(self, event):
+        """ Add a cmd to the cmd queue when user press a control button on UI."""
+        cmd = str(event.GetEventObject().GetName())
+        gv.gDebugPrint("Manual Control Robot Move dir %s" % cmd, logType=gv.LOG_INFO)
+        moveflag = cmd != 'return'
+        gv.iMapMgr.setRobotManualMove(moveflag, cmd)
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -360,7 +405,7 @@ class PanelEditorCtrl(wx.Panel):
         self.sceSavebtn.Bind(wx.EVT_BUTTON, self.onSaveScensrio)
         sizer.Add(self.sceSavebtn, flag=flagsL, border=2)
         sizer.AddSpacer(5)
-        self.sceLoadbtn = wx.Button(self, -1, "Load Saved Scenario")
+        self.sceLoadbtn = wx.Button(self, -1, "Load saved Scenario  ")
         self.sceLoadbtn.Bind(wx.EVT_BUTTON, self.onLoadScensrio)
         sizer.Add(self.sceLoadbtn, flag=flagsL, border=2)
         return sizer
