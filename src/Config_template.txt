@@ -15,3 +15,6 @@ BP_DIR:floorBluePrint
 
 # Init the prediction heat map directory
 HM_DIR:heatmap
+
+# Scenario file directory
+SC_DIR:scenario

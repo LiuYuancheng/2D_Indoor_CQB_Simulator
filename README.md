@@ -2,7 +2,7 @@
 
 ![](doc/img/logMid.png)
 
-**Program Design Purpose**: We want to build a 2D tactical board program which can load the building floor blue print, squad position, enemy position, enemy search path for Close-quarters battle (CQB) attack strategy planning and simulate the enemy prediction scenario. The tactical board UI is shown below:
+**Program Design Purpose**: We want to build a 2D tactical board program which can load the building floor blue print, squad position, enemies position, enemy search path for Close-quarters battle (CQB) attack strategy planning and simulate the enemy prediction scenario. The tactical board UI is shown below:
 
 ![](doc/img/screenshot01.png)
 

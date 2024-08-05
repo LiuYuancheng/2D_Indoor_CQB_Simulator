@@ -55,7 +55,6 @@ class PanelViewerCtrl(wx.Panel):
         hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
                                  style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
         hbox.AddSpacer(10)
-
         sizer.AddSpacer(5)
         return sizer
 
@@ -259,7 +258,7 @@ class PanelViewerCtrl(wx.Panel):
 class PanelEditorCtrl(wx.Panel):
     """ Control Panel for the change the editor diaplay map setting."""
 
-    def __init__(self, parent, panelSize=(800, 300)):
+    def __init__(self, parent, panelSize=(850, 300)):
         wx.Panel.__init__(self, parent, size=panelSize)
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         self.SetSizer(self._buildUISizer())
@@ -289,6 +288,10 @@ class PanelEditorCtrl(wx.Panel):
         sizer.AddSpacer(10)
         # prediction control sizer
         sizer.Add(self._buildScenCtrloSizer(), flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
+                                 style=wx.LI_VERTICAL), flag=flagsL, border=2)
+        sizer.AddSpacer(10)
         return sizer
         
     #-----------------------------------------------------------------------------
@@ -408,6 +411,11 @@ class PanelEditorCtrl(wx.Panel):
         self.sceLoadbtn = wx.Button(self, -1, "Load saved Scenario  ")
         self.sceLoadbtn.Bind(wx.EVT_BUTTON, self.onLoadScensrio)
         sizer.Add(self.sceLoadbtn, flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+        bm = wx.StaticBitmap(self, -1, wx.Bitmap(os.path.join(gv.IMG_FD, 'logMid.png'), 
+                                                 wx.BITMAP_TYPE_ANY))
+        sizer.Add(bm, flag=wx.LEFT, border=2)
+        sizer.AddSpacer(5)
         return sizer
 
     #-----------------------------------------------------------------------------
