@@ -48,6 +48,14 @@ class PanelViewerCtrl(wx.Panel):
         hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
                                  style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
         hbox.AddSpacer(10)
+        
+        hbox.Add(self._buildSensorDisSizer() , flag=flagsL, border=2)
+        
+        hbox.AddSpacer(10)
+        hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
+                                 style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
+        hbox.AddSpacer(10)
+        
         hbox.Add(self._buildRobotCtrlSizer() , flag=flagsL, border=2)
 
         sizer.Add(hbox, flag=flagsL, border=2)
@@ -165,6 +173,44 @@ class PanelViewerCtrl(wx.Panel):
         return sizer
     
     #-----------------------------------------------------------------------------
+    def _buildSensorDisSizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Robot Sensors ")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+
+        gSizer = wx.GridSizer(6, 2, 2, 2)
+        gSizer.Add(wx.StaticText(self, label="Robot Position: "), flag=flagsL, border=0)
+        self.robotPosTF = wx.StaticText(self, label="N.A")
+        gSizer.Add(self.robotPosTF, flag=flagsL, border=0)
+
+        gSizer.Add(wx.StaticText(self, label="Robot Direction: "), flag=flagsL, border=0)
+        self.robotDirTF = wx.StaticText(self, label="N.A")
+        gSizer.Add(self.robotDirTF, flag=flagsL, border=0)
+
+        gSizer.Add(wx.StaticText(self, label="Robot Left Dis: "), flag=flagsL, border=0)
+        self.robotLeftTF = wx.StaticText(self, label="N.A")
+        gSizer.Add(self.robotLeftTF, flag=flagsL, border=0)
+
+        gSizer.Add(wx.StaticText(self, label="Robot Front Dis: "), flag=flagsL, border=0)
+        self.robotFrontTF = wx.StaticText(self, label="N.A")
+        gSizer.Add(self.robotFrontTF, flag=flagsL, border=0)
+
+        gSizer.Add(wx.StaticText(self, label="Robot Right Dis: "), flag=flagsL, border=0)
+        self.robotRightTF = wx.StaticText(self, label="N.A")
+        gSizer.Add(self.robotRightTF, flag=flagsL, border=0)
+
+        gSizer.Add(wx.StaticText(self, label="Robot Back Dis: "), flag=flagsL, border=0)
+        self.robotBackTF = wx.StaticText(self, label="N.A")
+        gSizer.Add(self.robotBackTF, flag=flagsL, border=0)
+
+        sizer.Add(gSizer, flag=flagsL, border=2)
+        return sizer
+
+    #-----------------------------------------------------------------------------
     def _buildRobotCtrlSizer(self):
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -252,6 +298,21 @@ class PanelViewerCtrl(wx.Panel):
         gv.gDebugPrint("Manual Control Robot Move dir %s" % cmd, logType=gv.LOG_INFO)
         moveflag = cmd != 'return'
         gv.iMapMgr.setRobotManualMove(moveflag, cmd)
+
+    #-----------------------------------------------------------------------------
+    def updateMovSensorsData(self, dataDict):
+        posStr = dataDict['pos'] if 'pos' in dataDict.keys() else 'N.A'
+        self.robotPosTF.SetLabel(str(posStr))
+        dir = dataDict['dir'] if 'dir' in dataDict.keys() else 'N.A'
+        self.robotDirTF.SetLabel(str(dir)+' deg')
+        leftDic = dataDict['left'] if 'left' in dataDict.keys() else 'N.A'
+        self.robotLeftTF.SetLabel(str(leftDic))
+        rightDic = dataDict['right'] if 'right' in dataDict.keys() else 'N.A'
+        self.robotRightTF.SetLabel(str(rightDic))
+        frontDic = dataDict['front'] if 'front' in dataDict.keys() else 'N.A'
+        self.robotFrontTF.SetLabel(str(frontDic))
+        backDic = dataDict['back'] if 'back' in dataDict.keys() else 'N.A'
+        self.robotBackTF.SetLabel(str(backDic))
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -442,6 +503,7 @@ class PanelEditorCtrl(wx.Panel):
     def onGeneratePred(self, evt):
         if gv.iMapMgr: gv.iMapMgr.genRandomPred()
     
+    #-----------------------------------------------------------------------------
     def onSaveScensrio(self, evt):
         data = {
             "bluePrint":  gv.gBluePrintFilePath,
@@ -467,6 +529,7 @@ class PanelEditorCtrl(wx.Panel):
         gv.gDebugPrint("onSaveScensrio()> Save current scenario to file: %s" %filePath, logType=gv.LOG_INFO)
         saver.updateRcdFile()
 
+    #-----------------------------------------------------------------------------
     def onLoadScensrio(self, evt):
         openFileDialog = wx.FileDialog(self, "Open Scenario JSON File", gv.gScearioDir, "", 
             "Packet Capture Files (*.json)|*.json", 
@@ -492,6 +555,7 @@ class PanelEditorCtrl(wx.Panel):
         gv.iEDMapPnl.updateDisplay()
         gv.gDebugPrint("onLoadScensrio()> Load scenario from file: %s" %filename, logType=gv.LOG_INFO)
 
+    #-----------------------------------------------------------------------------
     def setBPInfo(self, bpInfo):
         """Set the blue print info. """
         self.bpval.SetValue(bpInfo)

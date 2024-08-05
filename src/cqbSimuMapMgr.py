@@ -172,6 +172,9 @@ class AgentRobot(AgentTarget):
     def getRoutePts(self):
         return self.routePts
 
+    def getDirection(self):
+        return self.direction
+
     def getTrajectory(self):
         return self.trajectory.copy()
 
@@ -196,12 +199,19 @@ class AgentRobot(AgentTarget):
         self.manualCtrl = manualCtrl
         if manualCtrl:
             self.autoMoveFlg = False
+            self.updateDir()
         else:
             self.autoMoveFlg = True 
 
     def setMoveDir(self, dir):
         if self.manualCtrl and str(dir) in DIR_DICT.keys():
             self.direction = DIR_DICT[str(dir)]
+
+    def updateDir(self):
+        nextPt = self.routePts[self.moveTgtIdx]
+        dirVectorX = nextPt[0] - self.crtPos[0]
+        dirVectorY = nextPt[1] - self.crtPos[1]
+        self.direction = (dirVectorX, dirVectorY)
 
     #-----------------------------------------------------------------------------
     def updateCrtPos(self):
@@ -231,6 +241,7 @@ class AgentRobot(AgentTarget):
                 self.crtPos[0], self.crtPos[1] = nextPt[0], nextPt[1]
                 if self.moveTgtIdx < len(self.routePts)-1: 
                     self.moveTgtIdx +=1
+                    self.updateDir()
                 else:
                     self.autoMoveFlg = False
             else:
@@ -324,7 +335,21 @@ class MapMgr(object):
 
     #-----------------------------------------------------------------------------
     def periodic(self):
-        if self.robot: self.robot.updateCrtPos()
+        if self.robot: 
+            self.robot.updateCrtPos()
+            self.updateSensorsDis()
+
+    def updateSensorsDis(self):
+        
+        dirTuple = self.robot.getDirection()
+        x = int(dirTuple[0])
+        y = int(dirTuple[1])
+        degreeVal = int(180 - math.degrees(math.atan2(x, y))) # convert to degree
+        data = {
+            'pos': str(self.robot.getCrtPos()),
+            'dir': str(degreeVal)
+        }
+        gv.iRWCtrlPanel.updateMovSensorsData(data)
 
     #-----------------------------------------------------------------------------
     # robot control functions
@@ -361,4 +386,7 @@ class MapMgr(object):
     def robotforward(self, timeInv=3):
         self.robot.forward(timeInv=timeInv)
 
-    
+    def updateSensorDisplay(self):
+        self.robot.getCrtPos() 
+        self.robot.get
+
