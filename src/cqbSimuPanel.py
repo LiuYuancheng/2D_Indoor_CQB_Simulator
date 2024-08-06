@@ -65,8 +65,17 @@ class PanelViewerCtrl(wx.Panel):
                                  style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
         hbox.AddSpacer(10)
 
-        hbox.Add(self._buildDetectSizer() , flag=flagsL, border=2)
+        hbox.Add(self._buildSoundDetectSizer() , flag=flagsL, border=2)
         sizer.Add(hbox, flag=flagsL, border=2)
+
+        hbox.AddSpacer(10)
+        hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
+                                 style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
+        hbox.AddSpacer(10)
+
+        hbox.Add(self._buildLidarDetectSizer() , flag=flagsL, border=2)
+        sizer.Add(hbox, flag=flagsL, border=2)
+
         sizer.AddSpacer(5)
         return sizer
 
@@ -117,6 +126,12 @@ class PanelViewerCtrl(wx.Panel):
         self.forwardBt.Bind(wx.EVT_BUTTON, self.forwardSimulation)
         sizer.Add(self.forwardBt, flag=flagsL, border=2)
         sizer.AddSpacer(20)
+
+        self.obsAvoidCB = wx.CheckBox(self, label = 'Enable Lidar Obstacle Avoidance')
+        self.obsAvoidCB.Bind(wx.EVT_CHECKBOX, self.onObsAvoid)
+        sizer.Add(self.obsAvoidCB, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL, border=2)
+        sizer.AddSpacer(5)
+
         # Add the state display 
         stlabel = wx.StaticText(self, label="State : ")
         stlabel.SetFont(font)
@@ -178,7 +193,6 @@ class PanelViewerCtrl(wx.Panel):
         self.showSonarMCB.Bind(wx.EVT_CHECKBOX, self.onShowSonar)
         self.showSonarMCB.SetValue(False)
         sizer.Add(self.showSonarMCB, flag=flagsL, border=2)
-
 
         sizer.AddSpacer(5)
         return sizer
@@ -253,11 +267,11 @@ class PanelViewerCtrl(wx.Panel):
         return sizer
 
     #-----------------------------------------------------------------------------
-    def _buildDetectSizer(self):
+    def _buildSoundDetectSizer(self):
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
         font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
-        label = wx.StaticText(self, label="Robot Detection")
+        label = wx.StaticText(self, label="Sound Detection")
         label.SetFont(font)
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(10)
@@ -265,6 +279,17 @@ class PanelViewerCtrl(wx.Panel):
         sizer.Add(gv.iDetectPanel, flag=flagsL, border=2)
         return sizer
     
+    def _buildLidarDetectSizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Lidar Detection")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+        return sizer
+
+
     #-----------------------------------------------------------------------------
     # define all the play button event handling function here.
     def startSimulation(self, event):
@@ -337,6 +362,11 @@ class PanelViewerCtrl(wx.Panel):
         gv.gDebugPrint("Manual Control Robot Move dir %s" % cmd, logType=gv.LOG_INFO)
         moveflag = cmd != 'return'
         gv.iMapMgr.setRobotManualMove(moveflag, cmd)
+
+    def onObsAvoid(self, event):
+        flg = self.obsAvoidCB.IsChecked()
+        gv.iMapMgr.setObsAvoid(flg)
+
 
     #-----------------------------------------------------------------------------
     def updateMovSensorsData(self, dataDict):

@@ -267,6 +267,12 @@ class MapMgr(object):
         self.mapMatrix = None
         self.sonarData = None
         self.soundData = None
+        
+        self.lidarOnflg = True
+        self.lidarDetectDis = 0
+        self.lidarDetecPt = None # front lidar detection point
+        
+        self.obstacleAvdFlg = False
 
     def initMapMatix(self):
         if gv.gBluePrintFilePath is None: return
@@ -432,11 +438,46 @@ class MapMgr(object):
             #print(self.sonarData)
 
     #-----------------------------------------------------------------------------
+    def calLidarDetect(self):
+        # calculate lidar beam
+        if self.robot and self.mapMatrix:
+            x, y = self.robot.getCrtPos()
+            degree = self.getRobotDirDegree()
+            degAClk = degree - 10
+            degClk = degree + 10
+            detX = x
+            detY = y
+            detectDis = 0
+            while True:
+                detIdx = x + int(detectDis*math.sin(math.radians(degree)))
+                detIdy = y - int(detectDis*math.cos(math.radians(degree)))
+                # Detection out of range
+                if detIdx >= 900 or detIdx <= 0 or detIdy >= 600 or detIdy <= 0:
+                    detX = detIdx
+                    detY = detIdy
+                    break
+                if self.mapMatrix[detIdy][detIdx] == 1:
+                    detX = detIdx
+                    detY = detIdy
+                    break
+                detectDis += 1
+            self.lidarDetectDis= detectDis
+            self.lidarDetecPt = (detX, detY)
+            #print(self.lidarDetecPt) 
+
+    def checkObstacle(self):
+        if 0 < self.lidarDetectDis < 20:
+            self.startMove(False)
+
+    #-----------------------------------------------------------------------------
     def getSonarData(self):
         return self.sonarData
 
     def getRobotDirDegree(self):
         return self.robotDirDegree
+
+    def getLidarData(self):
+        return self.lidarDetectDis, self.lidarDetecPt
 
     #-----------------------------------------------------------------------------
     def genRandomPred(self, ranRange=50):
@@ -454,7 +495,9 @@ class MapMgr(object):
             self.updateSensorsDis()
             if self.sonaOn: self.calsonarData()
             self.calcuSoundDir()
-
+            if self.lidarOnflg: self.calLidarDetect()
+            if self.obstacleAvdFlg: self.checkObstacle()
+                
     #-----------------------------------------------------------------------------
     def updateSensorsDis(self):
         
@@ -490,6 +533,9 @@ class MapMgr(object):
         for info in enemyDict:
             id, pos = info
             self.addEnemy(pos)
+
+    def setObsAvoid(self, obsAvoidFlag):
+        self.obstacleAvdFlg = obsAvoidFlag
 
     def setRobotManualMove(self, moveFlag, dirStr):
         if self.robot:

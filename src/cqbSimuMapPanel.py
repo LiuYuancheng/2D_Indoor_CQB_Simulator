@@ -39,6 +39,7 @@ class PanelRealworldMap(wx.Panel):
         self.showPredictFlg = True
         self.showHeatmap = False
         self.showSonarFlg = False
+        self.showLidarFlg = True
 
         self.Bind(wx.EVT_PAINT, self.onPaint)
         self.SetDoubleBuffered(True)
@@ -98,6 +99,22 @@ class PanelRealworldMap(wx.Panel):
                     dc.DrawLine(pos[0], pos[1], pos[0]-l, pos[1])
                     dc.DrawLine(pos[0], pos[1], pos[0], pos[1]+b)
                     dc.DrawLine(pos[0], pos[1], pos[0]+r, pos[1])
+
+            # Draw the lidar 
+            if self.showLidarFlg:
+                lidarData = gv.iMapMgr.getLidarData()
+                #print(lidarData)
+                if lidarData:
+                    lidarDis = lidarData[0]
+                    lidarPt = lidarData[1]
+                    if lidarDis > 0 and lidarPt:
+                        pen = wx.Pen(wx.Colour(169, 167, 12), 1) if self.toggle else wx.Pen(wx.Colour(127, 31, 31), 1, style=wx.PENSTYLE_LONG_DASH)
+                        #pen = wx.Pen(wx.Colour(169, 167, 12), 1, style=wx.PENSTYLE_LONG_DASH)
+                        dc.SetPen(pen)
+                        pos = robotObj.getCrtPos()
+                        dc.DrawLine(pos[0], pos[1], lidarPt[0], lidarPt[1])
+                        dc.SetBrush(wx.Brush(wx.Colour(127, 31, 31)))
+                        dc.DrawCircle(lidarPt[0], lidarPt[1], 3)
 
             # Draw robot and transparent enemy detection area.
             pos = robotObj.getCrtPos()
@@ -280,8 +297,7 @@ class PanelEditorMap(wx.Panel):
                         dc.SetTextForeground(wx.Colour(169, 167, 12))
                         dc.SetBrush(wx.Brush(wx.Colour(169, 167, 12)))
                         dc.DrawCircle(pt[0], pt[1], 3)
-                        dc.DrawText("WP-%s %s" %
-                                    (str(i), str(pt)), pt[0]+3, pt[1]+3)
+                        dc.DrawText("WP-%s %s" %(str(i), str(pt)), pt[0]+3, pt[1]+3)
         # drow the enemy
         dc.SetPen(self.defaultPen)
         dc.SetBrush(wx.Brush(wx.Colour("RED")))
