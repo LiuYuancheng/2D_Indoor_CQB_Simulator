@@ -169,6 +169,13 @@ class PanelViewerCtrl(wx.Panel):
         self.showHeatMapCB.Bind(wx.EVT_CHECKBOX, self.onShowHeatmap)
         self.showHeatMapCB.SetValue(False)
         sizer.Add(self.showHeatMapCB, flag=flagsL, border=2)
+        # Add the sonar measurement enable/disable checkbox
+        self.showSonarMCB = wx.CheckBox(self, label = 'Show Sonar Measurement')
+        self.showSonarMCB.Bind(wx.EVT_CHECKBOX, self.onShowSonar)
+        self.showSonarMCB.SetValue(False)
+        sizer.Add(self.showSonarMCB, flag=flagsL, border=2)
+
+
         sizer.AddSpacer(5)
         return sizer
     
@@ -182,7 +189,7 @@ class PanelViewerCtrl(wx.Panel):
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(10)
 
-        gSizer = wx.GridSizer(6, 2, 2, 2)
+        gSizer = wx.GridSizer(7, 2, 2, 2)
         gSizer.Add(wx.StaticText(self, label="Robot Position: "), flag=flagsL, border=0)
         self.robotPosTF = wx.StaticText(self, label="N.A")
         gSizer.Add(self.robotPosTF, flag=flagsL, border=0)
@@ -191,19 +198,25 @@ class PanelViewerCtrl(wx.Panel):
         self.robotDirTF = wx.StaticText(self, label="N.A")
         gSizer.Add(self.robotDirTF, flag=flagsL, border=0)
 
-        gSizer.Add(wx.StaticText(self, label="Robot Left Dis: "), flag=flagsL, border=0)
+        gSizer.Add(wx.StaticText(self, label="Robot Sonar Ctrl: "), flag=flagsL, border=0)
+        self.sonaEnableCb = wx.CheckBox(self, label = 'Enable')
+        self.sonaEnableCb.SetValue(False)
+        self.sonaEnableCb.Bind(wx.EVT_CHECKBOX, self.onEnableSonar)
+        gSizer.Add(self.sonaEnableCb, flag=flagsL, border=0)
+
+        gSizer.Add(wx.StaticText(self, label="Left Sonar Val: "), flag=flagsL, border=0)
         self.robotLeftTF = wx.StaticText(self, label="N.A")
         gSizer.Add(self.robotLeftTF, flag=flagsL, border=0)
 
-        gSizer.Add(wx.StaticText(self, label="Robot Front Dis: "), flag=flagsL, border=0)
+        gSizer.Add(wx.StaticText(self, label="Front Sonar Val: "), flag=flagsL, border=0)
         self.robotFrontTF = wx.StaticText(self, label="N.A")
         gSizer.Add(self.robotFrontTF, flag=flagsL, border=0)
 
-        gSizer.Add(wx.StaticText(self, label="Robot Right Dis: "), flag=flagsL, border=0)
+        gSizer.Add(wx.StaticText(self, label="Right Sonar Val: "), flag=flagsL, border=0)
         self.robotRightTF = wx.StaticText(self, label="N.A")
         gSizer.Add(self.robotRightTF, flag=flagsL, border=0)
 
-        gSizer.Add(wx.StaticText(self, label="Robot Back Dis: "), flag=flagsL, border=0)
+        gSizer.Add(wx.StaticText(self, label="Back Sonar Val: "), flag=flagsL, border=0)
         self.robotBackTF = wx.StaticText(self, label="N.A")
         gSizer.Add(self.robotBackTF, flag=flagsL, border=0)
 
@@ -218,6 +231,7 @@ class PanelViewerCtrl(wx.Panel):
         label = wx.StaticText(self, label="Robot Manual Control")
         label.SetFont(font)
         sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
         gSizer = wx.GridSizer(3, 3, 2, 2)
         buttonDetail = [ ('upL.png', 'upleft'), ('up.png', 'up'), ('upR.png', 'upright'),
                          ('left.png', 'left'), ('load.png', 'return'), ('right.png', 'right'),
@@ -291,6 +305,14 @@ class PanelViewerCtrl(wx.Panel):
     def onShowHeatmap(self, event):
         flg = self.showHeatMapCB.IsChecked()
         gv.iRWMapPnl.setShowHeatmap(flg)
+
+    def onEnableSonar(self, event):
+        flg = self.sonaEnableCb.IsChecked()
+        gv.iMapMgr.enableSonar(flg)
+
+    def onShowSonar(self, event):
+        flg = self.showSonarMCB.IsChecked()
+        gv.iRWMapPnl.setShowSonar(flg)
 
     def onRobotMove(self, event):
         """ Add a cmd to the cmd queue when user press a control button on UI."""
@@ -472,9 +494,12 @@ class PanelEditorCtrl(wx.Panel):
         self.sceSavebtn.Bind(wx.EVT_BUTTON, self.onSaveScensrio)
         sizer.Add(self.sceSavebtn, flag=flagsL, border=2)
         sizer.AddSpacer(5)
-        self.sceLoadbtn = wx.Button(self, -1, "Load saved Scenario  ")
+        self.sceLoadbtn = wx.Button(self, -1, "Load Saved Scenario   ")
         self.sceLoadbtn.Bind(wx.EVT_BUTTON, self.onLoadScensrio)
         sizer.Add(self.sceLoadbtn, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+        self.sceNameLb = wx.StaticText(self, label="Loaded Scenario: None ")
+        sizer.Add(self.sceNameLb, flag=flagsL, border=2)
         sizer.AddSpacer(10)
         bm = wx.StaticBitmap(self, -1, wx.Bitmap(os.path.join(gv.IMG_FD, 'logMid.png'), 
                                                  wx.BITMAP_TYPE_ANY))
@@ -550,6 +575,8 @@ class PanelEditorCtrl(wx.Panel):
         gv.iMapMgr.reInit()
         data = loader.getJsonData()
         bpPath = data['bluePrint']
+        if bpPath is None: return False
+        gv.gBluePrintFilePath = bpPath
         gv.gBluePrintBM = wx.Bitmap(bpPath, wx.BITMAP_TYPE_ANY)
         if gv.iEDCtrlPanel: gv.iEDCtrlPanel.setBPInfo(filename)
         if gv.iRWMapPnl: gv.iRWMapPnl.updateBitmap(gv.gBluePrintBM)
@@ -559,12 +586,16 @@ class PanelEditorCtrl(wx.Panel):
         gv.iMapMgr.setEnemy(data['enemy'])
         gv.iRWMapPnl.updateDisplay()
         gv.iEDMapPnl.updateDisplay()
+        self.updateScenarioName(filename)
         gv.gDebugPrint("onLoadScensrio()> Load scenario from file: %s" %filename, logType=gv.LOG_INFO)
 
     #-----------------------------------------------------------------------------
     def setBPInfo(self, bpInfo):
         """Set the blue print info. """
         self.bpval.SetValue(bpInfo)
+
+    def updateScenarioName(self, filename):
+        self.sceNameLb.SetLabel("Loaded Scenario: %s" %str(filename))
 
     def setMousePos(self, pos):
         self.mousPos.SetValue("X: %d, Y: %d" % (pos[0], pos[1]))

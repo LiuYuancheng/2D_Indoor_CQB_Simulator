@@ -21,7 +21,7 @@ import cqbSimuMapPanel as plMap
 import cqbSimuMapMgr as mapMgr
 import cqbSimuPanel as plFunc
 
-FRAME_SIZE = (1860, 930)
+FRAME_SIZE = (1860, 950)
 PERIODIC = 500      # update in every 500ms
 
 HELP_MSG="""

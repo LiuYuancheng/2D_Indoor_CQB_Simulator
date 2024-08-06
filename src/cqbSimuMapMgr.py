@@ -262,7 +262,9 @@ class MapMgr(object):
         self.robot = None
         self.enemys = []
         self.enemysIdCount = 0
+        self.sonaOn = False
         self.mapMatrix = None
+        self.sonaData = None
 
     def initMapMatix(self):
         if gv.gBluePrintFilePath is None: return
@@ -289,8 +291,6 @@ class MapMgr(object):
         self.mapMatrix = arr
         gv.gDebugPrint("Map matrix %s" %str(arr), prt=False, logType=gv.LOG_INFO)
         
-
-
     #-----------------------------------------------------------------------------
     def initRobot(self, pos):
         self.robot = AgentRobot(self, 0, pos)
@@ -333,6 +333,9 @@ class MapMgr(object):
                 self.enemys.pop(i)
                 return None
 
+    def enableSonar(self, flg):
+        self.sonaOn = flg
+
     #-----------------------------------------------------------------------------
     # Define all the get() functions here:
     def getRobot(self):
@@ -359,7 +362,7 @@ class MapMgr(object):
         return ('N.A', 'N.A', 'N.A')
 
     #-----------------------------------------------------------------------------
-    def getSensorData(self):
+    def calSonaData(self):
         if self.robot and self.mapMatrix:
             x, y = self.robot.getCrtPos()
             leftDis = 0 
@@ -401,15 +404,13 @@ class MapMgr(object):
                     break
                 else:
                     idxB += 1
-            
-            data = {
-                'left': leftDis,
-                'right': rightDis,
-                'front': frontDis,
-                'back': backDis
-            }
-            return data
-        return None
+            self.sonaData = (frontDis, backDis, leftDis, rightDis)
+            #print(self.sonaData)
+
+    #-----------------------------------------------------------------------------
+    def getSonaData(self):
+        return self.sonaData
+
     #-----------------------------------------------------------------------------
     def genRandomPred(self, ranRange=50):
         """ Generate enemy random prediction positions based on the input range."""
@@ -424,7 +425,9 @@ class MapMgr(object):
         if self.robot: 
             self.robot.updateCrtPos()
             self.updateSensorsDis()
+            if self.sonaOn: self.calSonaData()
 
+    #-----------------------------------------------------------------------------
     def updateSensorsDis(self):
         
         dirTuple = self.robot.getDirection()
@@ -435,15 +438,14 @@ class MapMgr(object):
             'pos': str(self.robot.getCrtPos()),
             'dir': str(degreeVal)
         }
-        sonaData = self.getSensorData()
+        sonaData = self.getSonaData()
         if sonaData:
-            data['left'] = sonaData['left']
-            data['right'] = sonaData['right']
-            data['front'] = sonaData['front']
-            data['back'] = sonaData['back']
-
+            data['front'] = sonaData[0]
+            data['back'] = sonaData[1]
+            data['left'] = sonaData[2]
+            data['right'] = sonaData[3]
+              
         gv.iRWCtrlPanel.updateMovSensorsData(data)
-
 
     #-----------------------------------------------------------------------------
     # robot control functions

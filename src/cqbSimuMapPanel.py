@@ -36,7 +36,9 @@ class PanelRealworldMap(wx.Panel):
         self.showTrajectoryFlg = True
         self.showEnemyFlg = True 
         self.showPredictFlg = True
-        self.showHeatmap = False 
+        self.showHeatmap = False
+        self.showSonarFlg = False
+
         self.Bind(wx.EVT_PAINT, self.onPaint)
         self.SetDoubleBuffered(True)
 
@@ -81,6 +83,21 @@ class PanelRealworldMap(wx.Panel):
                 trajectory = robotObj.getTrajectory()
                 dc.SetPen(wx.Pen(wx.Colour("RED"), 2, style=wx.PENSTYLE_LONG_DASH))
                 dc.DrawLines(trajectory)
+
+            # Draw the sonar
+            if self.showSonarFlg:
+                disVal = gv.iMapMgr.getSonaData()
+                if disVal:
+                    pos = robotObj.getCrtPos()
+                    color = wx.Colour(31, 156, 229) if self.toggle else wx.Colour('BLUE')
+                    pen = wx.Pen(color, 1, style=wx.PENSTYLE_LONG_DASH)
+                    dc.SetPen(pen)
+                    f, b, l, r = gv.iMapMgr.getSonaData()
+                    dc.DrawLine(pos[0], pos[1], pos[0], pos[1]-f)
+                    dc.DrawLine(pos[0], pos[1], pos[0]-l, pos[1])
+                    dc.DrawLine(pos[0], pos[1], pos[0], pos[1]+b)
+                    dc.DrawLine(pos[0], pos[1], pos[0]+r, pos[1])
+
             # Draw robot and transparent enemy detection area.
             pos = robotObj.getCrtPos()
             if self.showDetectFlg:
@@ -145,6 +162,9 @@ class PanelRealworldMap(wx.Panel):
 
     def setShowHeatmap(self, flg):
         self.showHeatmap = flg
+
+    def setShowSonar(self, flg):
+        self.showSonarFlg = flg
 
     #-----------------------------------------------------------------------------
     def onPaint(self, evt):
