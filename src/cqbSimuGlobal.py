@@ -74,9 +74,10 @@ CONFIG_DICT = iConfigLoader.getJson()
 #-------<GLOBAL VARIABLES (start with "g")>------------------------------------
 # VARIABLES are the built in data type.
 gBluePrintDir = os.path.join(dirpath,CONFIG_DICT['BP_DIR'])
-gScearioDir = os.path.join(dirpath, CONFIG_DICT['SC_DIR'])
+gScenarioDir = os.path.join(dirpath, CONFIG_DICT['SC_DIR'])
 gBluePrintFilePath = None 
 gBluePrintBM = None
+gScaleImgFlg = CONFIG_DICT['SCALE_IMG']
 gHeatMapDir = CONFIG_DICT['HM_DIR']
 
 gTranspPct = 70     # Windows transparent percentage.

@@ -48,7 +48,12 @@ class PanelRealworldMap(wx.Panel):
         dc.SetBrush(wx.Brush(self.bgColor))
         dc.DrawRectangle(0, 0, w, h)
         if self.bgBmp is not None:
-            dc.DrawBitmap(self._scaleBitmap(self.bgBmp, w, h), 0, 0)
+            if gv.gScaleImgFlg:
+                dc.DrawBitmap(self._scaleBitmap(self.bgBmp, w, h), 0, 0)
+            else:
+                x = (w - self.bgBmp.GetWidth()) / 2
+                y = (h - self.bgBmp.GetHeight()) / 2
+                dc.DrawBitmap(self.bgBmp, x, y)
         if self.showHeatmap:
             dc.DrawBitmap(self._scaleBitmap(self.heatMapBmp, w, h), 0, 0)
 
@@ -213,7 +218,13 @@ class PanelEditorMap(wx.Panel):
         w, h = self.panelSize
         dc.SetBrush(wx.Brush(self.bgColor))
         dc.DrawRectangle(0, 0, w, h)
-        if self.bgBmp is not None: dc.DrawBitmap(self._scaleBitmap(self.bgBmp, w, h), 0, 0)
+        if self.bgBmp is not None:
+            if gv.gScaleImgFlg:
+                dc.DrawBitmap(self._scaleBitmap(self.bgBmp, w, h), 0, 0)
+            else:
+                x = (w - self.bgBmp.GetWidth()) / 2
+                y = (h - self.bgBmp.GetHeight()) / 2
+                dc.DrawBitmap(self.bgBmp, x, y)
         # Draw the grid.
         dc.SetPen(wx.Pen(wx.Colour(67, 138, 85), 1, style=wx.PENSTYLE_LONG_DASH))
         dc.SetTextForeground(wx.Colour(67, 138, 85))

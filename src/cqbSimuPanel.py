@@ -177,7 +177,7 @@ class PanelViewerCtrl(wx.Panel):
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
         font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
-        label = wx.StaticText(self, label="Robot Sensors ")
+        label = wx.StaticText(self, label="Robot Movement Sensors ")
         label.SetFont(font)
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(10)
@@ -215,7 +215,7 @@ class PanelViewerCtrl(wx.Panel):
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
         font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
-        label = wx.StaticText(self, label="Robot Control")
+        label = wx.StaticText(self, label="Robot Manual Control")
         label.SetFont(font)
         sizer.Add(label, flag=flagsL, border=2)
         gSizer = wx.GridSizer(3, 3, 2, 2)
@@ -452,6 +452,9 @@ class PanelEditorCtrl(wx.Panel):
         self.predGenbtn.Bind(wx.EVT_BUTTON, self.onGeneratePred)
         sizer.Add(self.predGenbtn, flag=flagsL, border=2)
         sizer.AddSpacer(10)
+        self.initMapMxbtn = wx.Button(self, -1, "Generate Map Matrix")
+        self.initMapMxbtn.Bind(wx.EVT_BUTTON, self.onGenerateMapMx)
+        sizer.Add(self.initMapMxbtn, flag=flagsL, border=2)
         return sizer
 
     #-----------------------------------------------------------------------------
@@ -503,6 +506,9 @@ class PanelEditorCtrl(wx.Panel):
     def onGeneratePred(self, evt):
         if gv.iMapMgr: gv.iMapMgr.genRandomPred()
     
+    def onGenerateMapMx(self, evt):
+        if gv.iMapMgr: gv.iMapMgr.initMapMatix()
+
     #-----------------------------------------------------------------------------
     def onSaveScensrio(self, evt):
         data = {
@@ -523,7 +529,7 @@ class PanelEditorCtrl(wx.Panel):
         saver = JsonLoader()
         now = datetime.now() # current date and time
         date_time = now.strftime("%m_%d_%Y_%H_%M_%S")
-        filePath = os.path.join(gv.gScearioDir, "Scenario_%s.json" %str(date_time))
+        filePath = os.path.join(gv.gScenarioDir, "Scenario_%s.json" %str(date_time))
         saver.setJsonFilePath(filePath)
         saver.setJsonData(data)
         gv.gDebugPrint("onSaveScensrio()> Save current scenario to file: %s" %filePath, logType=gv.LOG_INFO)
@@ -531,7 +537,7 @@ class PanelEditorCtrl(wx.Panel):
 
     #-----------------------------------------------------------------------------
     def onLoadScensrio(self, evt):
-        openFileDialog = wx.FileDialog(self, "Open Scenario JSON File", gv.gScearioDir, "", 
+        openFileDialog = wx.FileDialog(self, "Open Scenario JSON File", gv.gScenarioDir, "", 
             "Packet Capture Files (*.json)|*.json", 
             wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         openFileDialog.ShowModal()

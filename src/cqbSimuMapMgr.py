@@ -17,6 +17,8 @@
 
 import math
 from random import randint
+from PIL import Image 
+
 import cqbSimuGlobal as gv
 
 ROB_TYPE = 0 
@@ -260,7 +262,36 @@ class MapMgr(object):
         self.robot = None
         self.enemys = []
         self.enemysIdCount = 0
+        self.mapMatrix = None
 
+    def initMapMatix(self):
+        if gv.gBluePrintFilePath is None: return
+        rows, cols = (600, 900)
+        img = Image.open(gv.gBluePrintFilePath)
+        imW, imH = img.size
+        arr = [[0 for i in range(cols)] for j in range(rows)]
+        self.mapMatrix = arr
+        offsetX = (cols-imW) // 2
+        offsetY = (rows-imH) // 2
+        
+        arr2 = [[0 for i in range(imW)] for j in range(imH)]
+        datas = img.getdata()
+        for i, data in enumerate(datas):
+            if data[0] + data[1] + data[2] <= 120:
+                arr2[i//imW][i%imW] = 1
+
+        #map arr2 to arr
+        for i in range(len(arr2)):
+            data = arr2[i]
+            for j in range(len(data)):
+                if data[j] == 1:
+                    self.mapMatrix[i+offsetY][j+offsetX] = 1
+        self.mapMatrix = arr
+        gv.gDebugPrint("Map matrix %s" %str(arr), prt=False, logType=gv.LOG_INFO)
+        
+
+
+    #-----------------------------------------------------------------------------
     def initRobot(self, pos):
         self.robot = AgentRobot(self, 0, pos)
 
@@ -271,6 +302,8 @@ class MapMgr(object):
     def clearRobotRoute(self):
         if self.robot: self.robot.clearRoute()
 
+    #-----------------------------------------------------------------------------
+    # Selection control
     def checkSelected(self, posX, posY, threshold=8):
         """ Check if the input position is near any of the map components. 
             If yes, set the component as selected.
@@ -315,6 +348,7 @@ class MapMgr(object):
                 return enemyObj
         return None 
 
+    #-----------------------------------------------------------------------------
     def getSelectedInfo(self):
         if self.robot and self.robot.getSelected():
             return (self.robot.getID(), self.robot.getOrgPos(), 'Robot')
@@ -324,6 +358,58 @@ class MapMgr(object):
                     return (enemyObj.getID(), enemyObj.getOrgPos(), 'Enemy')
         return ('N.A', 'N.A', 'N.A')
 
+    #-----------------------------------------------------------------------------
+    def getSensorData(self):
+        if self.robot and self.mapMatrix:
+            x, y = self.robot.getCrtPos()
+            leftDis = 0 
+            maplineH = self.mapMatrix[y]
+            idxL = x
+            while idxL >= 0:
+                if maplineH[idxL] == 1:
+                    leftDis = x - idxL
+                    break
+                else:
+                    idxL -=1
+            rightDis = 0
+            idxR = x
+            while idxR < len(maplineH):
+                if maplineH[idxR] == 1:
+                    rightDis = idxR - x
+                    break
+                else:
+                    idxR += 1
+
+            maplineV = []
+            for i in range(600):
+                maplineV.append(self.mapMatrix[i][x]) 
+
+            frontDis = 0
+            idxF = y
+            while idxF >= 0:
+                if maplineV[idxF] == 1:
+                    frontDis = y - idxF
+                    break
+                else:
+                    idxF -=1
+
+            backDis = 0
+            idxB = y
+            while idxB < len(maplineV):
+                if maplineV[idxB] == 1:
+                    backDis = idxB - y
+                    break
+                else:
+                    idxB += 1
+            
+            data = {
+                'left': leftDis,
+                'right': rightDis,
+                'front': frontDis,
+                'back': backDis
+            }
+            return data
+        return None
     #-----------------------------------------------------------------------------
     def genRandomPred(self, ranRange=50):
         """ Generate enemy random prediction positions based on the input range."""
@@ -349,7 +435,15 @@ class MapMgr(object):
             'pos': str(self.robot.getCrtPos()),
             'dir': str(degreeVal)
         }
+        sonaData = self.getSensorData()
+        if sonaData:
+            data['left'] = sonaData['left']
+            data['right'] = sonaData['right']
+            data['front'] = sonaData['front']
+            data['back'] = sonaData['back']
+
         gv.iRWCtrlPanel.updateMovSensorsData(data)
+
 
     #-----------------------------------------------------------------------------
     # robot control functions
@@ -386,7 +480,5 @@ class MapMgr(object):
     def robotforward(self, timeInv=3):
         self.robot.forward(timeInv=timeInv)
 
-    def updateSensorDisplay(self):
-        self.robot.getCrtPos() 
-        self.robot.get
 
+    
