@@ -243,12 +243,12 @@ class AgentRobot(AgentTarget):
                 self.crtPos[0], self.crtPos[1] = nextPt[0], nextPt[1]
                 if self.moveTgtIdx < len(self.routePts)-1: 
                     self.moveTgtIdx +=1
-                    self.updateDir()
                 else:
                     self.autoMoveFlg = False
             else:
                 self.crtPos[0] += int((nextPt[0] - self.crtPos[0])*1.0/dist * self.moveSpeed)
                 self.crtPos[1] += int((nextPt[1] - self.crtPos[1])*1.0/dist * self.moveSpeed)
+                self.updateDir()
             # Add the current pos to the trajectory
             self._addPosInTra(self.crtPos.copy())
 
@@ -260,11 +260,13 @@ class MapMgr(object):
     """
     def __init__(self) -> None:
         self.robot = None
+        self.robotDirDegree = 0
         self.enemys = []
         self.enemysIdCount = 0
         self.sonaOn = False
         self.mapMatrix = None
-        self.sonaData = None
+        self.sonarData = None
+        self.soundData = None
 
     def initMapMatix(self):
         if gv.gBluePrintFilePath is None: return
@@ -291,6 +293,28 @@ class MapMgr(object):
         self.mapMatrix = arr
         gv.gDebugPrint("Map matrix %s" %str(arr), prt=False, logType=gv.LOG_INFO)
         
+    def reInit(self):
+        self.robot = None
+        self.enemys = []
+        self.enemysIdCount = 0
+
+    def calcuSoundDir(self):
+        if self.robot is None or len(self.enemys) == 0: return
+        robotPos = self.robot.getCrtPos()
+        soundDir = []
+        for enemyObj in self.enemys:
+            enemyPos = enemyObj.getOrgPos()
+            x = int(enemyPos[0] - robotPos[0])
+            y = int(enemyPos[1] - robotPos[1])
+            degreeVal = int(180 - math.degrees(math.atan2(x, y))) # convert to degree
+            soundDir.append(degreeVal)
+        self.soundData = soundDir.copy()
+
+    #-----------------------------------------------------------------------------
+    # Robot control
+    def getSoundData(self):
+        return self.soundData
+
     #-----------------------------------------------------------------------------
     def initRobot(self, pos):
         self.robot = AgentRobot(self, 0, pos)
@@ -362,7 +386,7 @@ class MapMgr(object):
         return ('N.A', 'N.A', 'N.A')
 
     #-----------------------------------------------------------------------------
-    def calSonaData(self):
+    def calsonarData(self):
         if self.robot and self.mapMatrix:
             x, y = self.robot.getCrtPos()
             leftDis = 0 
@@ -404,12 +428,15 @@ class MapMgr(object):
                     break
                 else:
                     idxB += 1
-            self.sonaData = (frontDis, backDis, leftDis, rightDis)
-            #print(self.sonaData)
+            self.sonarData = (frontDis, backDis, leftDis, rightDis)
+            #print(self.sonarData)
 
     #-----------------------------------------------------------------------------
-    def getSonaData(self):
-        return self.sonaData
+    def getSonarData(self):
+        return self.sonarData
+
+    def getRobotDirDegree(self):
+        return self.robotDirDegree
 
     #-----------------------------------------------------------------------------
     def genRandomPred(self, ranRange=50):
@@ -425,7 +452,8 @@ class MapMgr(object):
         if self.robot: 
             self.robot.updateCrtPos()
             self.updateSensorsDis()
-            if self.sonaOn: self.calSonaData()
+            if self.sonaOn: self.calsonarData()
+            self.calcuSoundDir()
 
     #-----------------------------------------------------------------------------
     def updateSensorsDis(self):
@@ -434,16 +462,17 @@ class MapMgr(object):
         x = int(dirTuple[0])
         y = int(dirTuple[1])
         degreeVal = int(180 - math.degrees(math.atan2(x, y))) # convert to degree
+        self.robotDirDegree = degreeVal
         data = {
             'pos': str(self.robot.getCrtPos()),
             'dir': str(degreeVal)
         }
-        sonaData = self.getSonaData()
-        if sonaData:
-            data['front'] = sonaData[0]
-            data['back'] = sonaData[1]
-            data['left'] = sonaData[2]
-            data['right'] = sonaData[3]
+        sonarData = self.getSonarData()
+        if sonarData:
+            data['front'] = sonarData[0]
+            data['back'] = sonarData[1]
+            data['left'] = sonarData[2]
+            data['right'] = sonarData[3]
               
         gv.iRWCtrlPanel.updateMovSensorsData(data)
 
@@ -468,11 +497,6 @@ class MapMgr(object):
             if moveFlag:
                 self.robot.setMoveDir(dirStr)
 
-    def reInit(self):
-        self.robot = None
-        self.enemys = []
-        self.enemysIdCount = 0
-
     def resetBot(self):
         self.robot.resetCrtPos()
 
@@ -481,6 +505,3 @@ class MapMgr(object):
 
     def robotforward(self, timeInv=3):
         self.robot.forward(timeInv=timeInv)
-
-
-    

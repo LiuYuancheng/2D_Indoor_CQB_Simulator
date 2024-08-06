@@ -18,6 +18,8 @@ import wx
 from datetime import datetime
 
 import cqbSimuGlobal as gv
+from cqbSimuMapPanel import PanelDetection
+
 from ConfigLoader import JsonLoader
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -58,11 +60,13 @@ class PanelViewerCtrl(wx.Panel):
         
         hbox.Add(self._buildRobotCtrlSizer() , flag=flagsL, border=2)
 
-        sizer.Add(hbox, flag=flagsL, border=2)
         hbox.AddSpacer(10)
         hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
                                  style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
         hbox.AddSpacer(10)
+
+        hbox.Add(self._buildDetectSizer() , flag=flagsL, border=2)
+        sizer.Add(hbox, flag=flagsL, border=2)
         sizer.AddSpacer(5)
         return sizer
 
@@ -248,6 +252,19 @@ class PanelViewerCtrl(wx.Panel):
         sizer.Add(gSizer, flag=flagsL, border=2)
         return sizer
 
+    #-----------------------------------------------------------------------------
+    def _buildDetectSizer(self):
+        flagsL = wx.LEFT
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        label = wx.StaticText(self, label="Robot Detection")
+        label.SetFont(font)
+        sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+        gv.iDetectPanel = PanelDetection(self)
+        sizer.Add(gv.iDetectPanel, flag=flagsL, border=2)
+        return sizer
+    
     #-----------------------------------------------------------------------------
     # define all the play button event handling function here.
     def startSimulation(self, event):

@@ -161,6 +161,7 @@ class UIFrame(wx.Frame):
             self.lastPeriodicTime = now
             gv.iMapMgr.periodic()
             gv.iRWMapPnl.updateDisplay()
+            gv.iDetectPanel.updateDisplay()
 
 #-----------------------------------------------------------------------------
     def onLoadBlueprint(self, event):

@@ -16,6 +16,7 @@
 
 import os 
 import wx
+import math
 import cqbSimuGlobal as gv
 
 #-----------------------------------------------------------------------------
@@ -86,13 +87,13 @@ class PanelRealworldMap(wx.Panel):
 
             # Draw the sonar
             if self.showSonarFlg:
-                disVal = gv.iMapMgr.getSonaData()
+                disVal = gv.iMapMgr.getSonarData()
                 if disVal:
                     pos = robotObj.getCrtPos()
                     color = wx.Colour(31, 156, 229) if self.toggle else wx.Colour('BLUE')
                     pen = wx.Pen(color, 1, style=wx.PENSTYLE_LONG_DASH)
                     dc.SetPen(pen)
-                    f, b, l, r = gv.iMapMgr.getSonaData()
+                    f, b, l, r = gv.iMapMgr.getSonarData()
                     dc.DrawLine(pos[0], pos[1], pos[0], pos[1]-f)
                     dc.DrawLine(pos[0], pos[1], pos[0]-l, pos[1])
                     dc.DrawLine(pos[0], pos[1], pos[0], pos[1]+b)
@@ -109,6 +110,7 @@ class PanelRealworldMap(wx.Panel):
             dc.SetBrush(wx.Brush(robotColor))
             dc.SetPen(self.defaultPen)
             dc.DrawCircle(pos[0], pos[1], 8)
+        
         # drow the enemies
         if self.showEnemyFlg:
             dc.SetPen(self.defaultPen)
@@ -351,4 +353,66 @@ class PanelEditorMap(wx.Panel):
             will set the self update flag.
         """
         self.Refresh(False)
+        self.Update()
+
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+class PanelDetection(wx.Panel):
+    """ Viewer display map panel."""
+    def __init__(self, parent, panelSize=(130, 130)):
+        wx.Panel.__init__(self, parent, size=panelSize)
+        self.bgColor = wx.Colour(0, 0, 0)
+        self.SetBackgroundColour(self.bgColor)
+        self.panelSize = panelSize
+        self.Bind(wx.EVT_PAINT, self.onPaint)
+        self.SetDoubleBuffered(True)
+
+    def onPaint(self, evt):
+        """ Draw the map on the panel."""
+        dc = wx.PaintDC(self)
+        cx, cy = self.panelSize
+        self.defaultPen = dc.GetPen()
+        dc.SetPen(wx.Pen(wx.Colour('GREEN'), 1))
+        dc.SetBrush(wx.Brush(wx.Colour('BLACK')))
+        dc.DrawCircle(65, 65, 50)
+        dc.SetPen(wx.Pen(wx.Colour('GREEN'), 1, style=wx.PENSTYLE_LONG_DASH))
+        dc.DrawLine(0, 65, 130, 65)
+        dc.DrawLine(65, 0, 65, 130)
+        dc.SetTextForeground(wx.Colour("GREEN"))
+        dc.DrawText("0", 70, 2)
+        dc.DrawText("90", 115, 70)
+        dc.DrawText("180", 70, 115)
+        dc.DrawText("270", 0, 70)
+        # draw the robot direction
+        robotObj = gv.iMapMgr.getRobot()
+        if robotObj:
+            dirTuple = robotObj.getDirection()
+            if dirTuple:
+                x = int(dirTuple[0])
+                y = int(dirTuple[1])
+                dist = math.sqrt((x)**2 + (y)**2)
+                dirx = 65+int(x*50/dist) if dist != 0 else 65
+                diry = 65+int(y*50/dist) if dist != 0 else 15
+                dc.SetPen(wx.Pen(wx.Colour('BLUE'), 2, style=wx.PENSTYLE_LONG_DASH))
+                dc.DrawLine(65, 65, dirx, diry)
+                dc.SetTextForeground(wx.Colour("BLUE"))
+                dirDegree = gv.iMapMgr.getRobotDirDegree()
+                dc.DrawText(str(dirDegree), dirx+5, diry-5)
+        # Draw the sound direction
+        dc.SetPen(wx.Pen(wx.Colour('RED'), 2, style=wx.PENSTYLE_LONG_DASH))
+        dc.SetTextForeground(wx.Colour("RED"))
+        soundDirtList = gv.iMapMgr.getSoundData()
+        if soundDirtList and len(soundDirtList) > 0:
+            for soundDeg in soundDirtList:
+                x = 65 + int(50*math.sin(math.radians(soundDeg)))
+                y = 65 - int(50*math.cos(math.radians(soundDeg)))
+                dc.DrawLine(65, 65, x, y)
+                dc.DrawText(str(int(soundDeg)), x+5, y-5)
+
+    def updateDisplay(self, updateFlag=None):
+        """ Set/Update the display: if called as updateDisplay() the function will 
+            update the panel, if called as updateDisplay(updateFlag=?) the function
+            will set the self update flag.
+        """
+        self.Refresh(True)
         self.Update()

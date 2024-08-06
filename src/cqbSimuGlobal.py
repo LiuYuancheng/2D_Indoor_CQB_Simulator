@@ -89,4 +89,5 @@ iRWMapPnl = None    # Image panel.
 iEDMapPnl = None    # Edit panel.
 iEDCtrlPanel = None   # editer control panel
 iRWCtrlPanel = None   # read only control panel
+iDetectPanel = None   # detect panel
 iMapMgr = None
