@@ -2,18 +2,23 @@
 #-----------------------------------------------------------------------------
 # Name:        2DCQBSimuRun.py
 #
-# Purpose:     This module is the main wx Frame of the 2D Indoor CQB Simulator.
+# Purpose:     This module is the main wx App frame of the 2D Indoor CQB robot 
+#              Simulation program.
 #
 # Author:      Yuancheng Liu
 #
 # Created:     2024/07/30
-# Version:     v_0.1.1
+# Version:     v_0.1.3
 # Copyright:   Copyright (c) 2024 LiuYuancheng
 # License:     MIT License
 #-----------------------------------------------------------------------------
-
-import os
-import sys
+"""
+Program Design:
+    We want to build a 2D tactical board program (like a computer game) which can load 
+    the building floor blue print, CQB squad (robot) position, enemies position, enemy 
+    search path for simulating Close-quarters battle (CQB) robot's enemy searching strategy 
+    planning and prediction scenario.
+"""
 import time
 import wx
 import cqbSimuGlobal as gv
@@ -35,12 +40,11 @@ If there is any bug, please contact:
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class UIFrame(wx.Frame):
-    """ Main UI frame window."""
+    """ Main App UI frame window."""
     def __init__(self, parent, id, title):
         """ Init the UI and parameters """
         wx.Frame.__init__(self, parent, id, title, size=FRAME_SIZE)
         # No boader frame:
-        #wx.Frame.__init__(self, parent, id, title, style=wx.MINIMIZE_BOX | wx.STAY_ON_TOP)
         self.SetIcon(wx.Icon(gv.ICO_PATH))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         # Init all the global paramters.
@@ -52,11 +56,12 @@ class UIFrame(wx.Frame):
         # Build UI sizer
         self.SetSizer(self._buildUISizer())
         # Set the periodic call back
+        self.updateLock = False # flag to identify whether lock the periodic update
         self.lastPeriodicTime = time.time()
         self.timer = wx.Timer(self)
-        self.updateLock = False
         self.Bind(wx.EVT_TIMER, self.periodic)
         self.timer.Start(PERIODIC)  # every 500 ms
+        # bind the UI windows close event handler.
         self.Bind(wx.EVT_CLOSE, self.onClose)
         gv.gDebugPrint("%s main frame inited." %str(gv.UI_TITLE), logType=gv.LOG_INFO)
 
@@ -64,7 +69,7 @@ class UIFrame(wx.Frame):
         """ Init the global parameters. """
         gv.iMapMgr = mapMgr.MapMgr()
 
-#--UIFrame---------------------------------------------------------------------
+    #--UIFrame---------------------------------------------------------------------
     def _buildMenuBar(self):
         """ Creat the top function menu bar."""
         # Add the config menu
@@ -74,10 +79,6 @@ class UIFrame(wx.Frame):
         blueprintItem = wx.MenuItem(configMenu, 100, text="Load Building BluePrint", kind=wx.ITEM_NORMAL)
         configMenu.Append(blueprintItem)
         self.Bind(wx.EVT_MENU, self.onLoadBlueprint, blueprintItem)
-        
-        #scerioLDItem = wx.MenuItem(configMenu, 100, text="Load Scenario", kind=wx.ITEM_NORMAL)
-        #configMenu.Append(scerioLDItem)
-        #self.Bind(wx.EVT_MENU, self.onLoadScenario, scerioLDItem)
         menubar.Append(configMenu, '&Config')
         # Add the about menu.
         helpMenu = wx.Menu()
@@ -87,7 +88,7 @@ class UIFrame(wx.Frame):
         menubar.Append(helpMenu, '&About')
         self.SetMenuBar(menubar)
 
-#--UIFrame---------------------------------------------------------------------
+    #--UIFrame---------------------------------------------------------------------
     def _buildUISizer(self):
         """ Build the frame main UI Sizer."""
         flagsR = wx.CENTER
@@ -99,7 +100,6 @@ class UIFrame(wx.Frame):
         # A the viewer sizer.
         viewerSizer = self._buildRealWordSizer()
         hbox1.Add(viewerSizer, flag=wx.LEFT, border=2)
-        #
         hbox1.AddSpacer(10)
         hbox1.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 900),
                                  style=wx.LI_VERTICAL), flag=flagsR, border=2)
@@ -110,15 +110,14 @@ class UIFrame(wx.Frame):
         mSizer.Add(hbox1, flag=flagsR, border=2)
         return mSizer
 
-#--UIFrame---------------------------------------------------------------------
+    #--UIFrame---------------------------------------------------------------------
     def _buildRealWordSizer(self):
         """ Build the real world display (viewer) sizer."""
         flagsL = wx.LEFT
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(5)
-        font = wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
-        label = wx.StaticText(self, label="Indoor CQB Simulation Viewer")
-        label.SetFont(font)
+        label = wx.StaticText(self, label="Indoor CQB Robot Simulation Viewer")
+        label.SetFont(wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         vbox.Add(label, flag=wx.CENTER, border=2)
         vbox.AddSpacer(5)
         # Add the display panel
@@ -131,15 +130,14 @@ class UIFrame(wx.Frame):
         vbox.AddSpacer(5)
         return vbox
 
-#--UIFrame---------------------------------------------------------------------
+    #--UIFrame---------------------------------------------------------------------
     def _buildEditorSizer(self):
         """ Build the editor sizer."""
         flagsL = wx.LEFT
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(5)
-        font = wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
-        label = wx.StaticText(self, label="Indoor CQB Simulation Editor")
-        label.SetFont(font)
+        label = wx.StaticText(self, label="Indoor CQB Robot Simulation Editor")
+        label.SetFont(wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         vbox.Add(label, flag=wx.CENTER, border=2)
         vbox.AddSpacer(5)
         # Add the display panel
@@ -152,7 +150,7 @@ class UIFrame(wx.Frame):
         vbox.AddSpacer(5)
         return vbox
 
-#--UIFrame---------------------------------------------------------------------
+    #--UIFrame---------------------------------------------------------------------
     def periodic(self, event):
         """ Call back every periodic time."""
         now = time.time()
@@ -163,31 +161,34 @@ class UIFrame(wx.Frame):
             gv.iRWMapPnl.updateDisplay()
             gv.iDetectPanel.updateDisplay()
 
-#-----------------------------------------------------------------------------
+    #--UIFrame---------------------------------------------------------------------
     def onLoadBlueprint(self, event):
-        """ Handle load the build blue print image."""
+        """ Handle load the building floor blue print image."""
         openFileDialog = wx.FileDialog(self, "Open Blue Print File", gv.gBluePrintDir, "", 
             "Packet Capture Files (*.jpg;*.png;*.bmp)|*.jpg;*.png;*.bmp", 
             wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         openFileDialog.ShowModal()
-        bpPath = str(openFileDialog.GetPath())
+        gv.gBluePrintFilePath = str(openFileDialog.GetPath())
         filename = str(openFileDialog.GetFilename())
-        gv.gBluePrintFilePath = bpPath
         openFileDialog.Destroy()
         if filename == "": return
-        gv.gBluePrintBM = wx.Bitmap(bpPath, wx.BITMAP_TYPE_ANY)
         if gv.iEDCtrlPanel: gv.iEDCtrlPanel.setBPInfo(filename)
-        if gv.iRWMapPnl: gv.iRWMapPnl.updateBitmap(gv.gBluePrintBM)
-        if gv.iEDMapPnl: gv.iEDMapPnl.updateBitmap(gv.gBluePrintBM)
-        gv.iRWMapPnl.updateDisplay()
-        gv.iEDMapPnl.updateDisplay()
+        gv.gBluePrintBM = wx.Bitmap(gv.gBluePrintFilePath, wx.BITMAP_TYPE_ANY)
+        # Update the viewer background 
+        if gv.iRWMapPnl: 
+            gv.iRWMapPnl.updateBitmap(gv.gBluePrintBM)
+            gv.iRWMapPnl.updateDisplay()
+        # Update the editor background 
+        if gv.iEDMapPnl:
+            gv.iEDMapPnl.updateBitmap(gv.gBluePrintBM)
+            gv.iEDMapPnl.updateDisplay()
 
-#-----------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
     def onHelp(self, event):
         """ Pop-up the Help information window. """
         wx.MessageBox(HELP_MSG, 'Help', wx.OK)
 
-#-----------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
     def onClose(self, evt):
         """ Pop up the confirm close dialog when the user close the UI from 'x'."""
         try:
