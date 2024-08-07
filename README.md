@@ -21,17 +21,49 @@ The use of robots in Close Quarters Battle (CQB) is a significant advancement in
 
 ### Introduction
 
-Demo video.
+2D_Indoor_CQB_Robot_Simulation program will provide 2 main part: the CQB scenario tactical board Editor and the situation simulation viewer. The tactical board editor is used for building a CQB scenario and situation viewer is used to simulate how the CQB robot use its sensors to do combine environment visualization, enemy search and prediction in physical word.  
+
+#### CQB Scenario Tactical Board Editor
+
+In the editor, the user can build a CQB scenario with below steps:
+
+- Step1: load the build indoor blue print in the editor to build the floor plan matrix.
+- Step2: Plan the robot start position, then set the robot auto pilot and enemy search path.
+- Step3: Adjust the robot motion and detection parameters such as the move speed, sensitivity and detection range of sensors. 
+- Step4: Plant the enemy location and enemy's movement strategy (stationary, patrol or random wondering)
+
+After the user config a CQB scenario, then can also save the scenario in file and load it next time when they want to use it.
+
+#### CQB situation simulation viewer
+
+The viewer will simulate the real world situation when robot follow the use's auto enemy search path. The viewer provide the robot auto pilot and user manual control to simulate different operation situation. The viewer will generate all the related real time robot sensor data based on the floor blue print and the enemy config such as 
+
+- Robot sonar detect the wall reflection to calculate the distance between the robot and the wall, 
+- Robot front Lidar detect a glass door which robot can not pass, 
+- Robot 360' microphones array to identify enemy possible position based on the enemy sound, 
+- Robot Electro optical camera detect a enemy behind a glass door from visual analysis. 
+
+The viewer will also visualize the robot's enemy prediction result and during the simulation progress, user can stepping through forward and backward the progress to improve the enemy search path. 
+
+#### Use Case and Future Work
+
+In the future, we also want to integrate AI in the enemy strategy config part to make the enemy's action and interactivities with the environment more like "Human". Then we also want to use the program to train AI to improve the enemy predication and train AI to find the best enemy search path then may be able to apply in the computer game or even provide help for real world CQB combat decision making.
 
 
 
+------
 
+### System Design 
 
+The program includes several sub system, in this section will introduce some key feature and how we design the sub systems. 
 
+ 
 
-#### CQB Robot Sensor's Simulation Introduction
+#### CQB Robot Sensor's Simulation Design
 
-The sensor system in CQB (Close Quarters Battle) robots is crucial for their ability to navigate, detect threats, and provide real-time intelligence in confined and potentially hostile environments. Normally the CQB robot sensor will includes 8 types:  `Optical Sensors`, `Thermal Imaging Sensors`, `Proximity and Obstacle Detection Sensors`, `Environmental Sensors`,  `Audio Sensors`, `Motion and Vibration Sensors`, `Communication and Signal Sensors` and `Multispectral and Hyperspectral Sensors`.  These sensors enable the robot to perform a variety of tasks, from mapping the environment to identifying potential dangers. The sensors we want to simulate are shown below:
+The sensor system in CQB (Close Quarters Battle) robots is crucial for their ability to navigate, detect threats, and provide real-time intelligence in confined and potentially hostile environments. Normally the CQB robot sensor will includes 8 types:  `Optical Sensors`, `Thermal Imaging Sensors`, `Proximity and Obstacle Detection Sensors`, `Environmental Sensors`,  `Audio Sensors`, `Motion and Vibration Sensors`, `Communication and Signal Sensors` and `Multispectral and Hyperspectral Sensors`.  These sensors enable the robot to perform a variety of tasks, from mapping the environment to identifying potential dangers. 
+
+In our system our program will simulate 5 types of sensors used on the robot, the sensors we want to simulate are shown below:
 
 ![](doc/img/sensors.png)
 
