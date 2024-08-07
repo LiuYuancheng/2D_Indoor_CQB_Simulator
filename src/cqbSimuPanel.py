@@ -21,6 +21,7 @@ import cqbSimuGlobal as gv
 from cqbSimuMapPanel import PanelDetection
 
 from ConfigLoader import JsonLoader
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelViewerCtrl(wx.Panel):
@@ -188,12 +189,12 @@ class PanelViewerCtrl(wx.Panel):
         self.showHeatMapCB.Bind(wx.EVT_CHECKBOX, self.onShowHeatmap)
         self.showHeatMapCB.SetValue(False)
         sizer.Add(self.showHeatMapCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
         # Add the sonar measurement enable/disable checkbox
         self.showSonarMCB = wx.CheckBox(self, label = 'Show Sonar Measurement')
         self.showSonarMCB.Bind(wx.EVT_CHECKBOX, self.onShowSonar)
         self.showSonarMCB.SetValue(False)
         sizer.Add(self.showSonarMCB, flag=flagsL, border=2)
-
         sizer.AddSpacer(5)
         return sizer
     
@@ -283,10 +284,35 @@ class PanelViewerCtrl(wx.Panel):
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
         font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
-        label = wx.StaticText(self, label="Lidar Detection")
+        label = wx.StaticText(self, label="Lidar and Cam Ctrl")
         label.SetFont(font)
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(10)
+
+        sizer.Add(wx.StaticText(self, label="Front Lidar Ctrl:"), flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.lidarOnCB = wx.CheckBox(self, label = 'Turn on Front Lidar')
+        self.lidarOnCB.Bind(wx.EVT_CHECKBOX, self.onEnableLidar)
+        self.lidarOnCB.SetValue(False)
+        sizer.Add(self.lidarOnCB, flag=flagsL, border=2)
+        sizer.AddSpacer(10)
+
+        sizer.Add(wx.StaticText(self, label="Front Camera Ctrl:"), flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.camOnCB = wx.CheckBox(self, label = 'Turn on Front Camera')
+        self.camOnCB.Bind(wx.EVT_CHECKBOX, self.onEnableCam)
+        self.camOnCB.SetValue(False)
+        sizer.Add(self.camOnCB, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
+
+        self.camDectOnCB = wx.CheckBox(self, label = 'Visual Enemy Detection')
+        self.camDectOnCB.Bind(wx.EVT_CHECKBOX, self.onEnableCamDetect)
+        self.camDectOnCB.SetValue(False)
+        sizer.Add(self.camDectOnCB, flag=flagsL, border=2)
+
+
         return sizer
 
 
@@ -351,6 +377,18 @@ class PanelViewerCtrl(wx.Panel):
     def onEnableSonar(self, event):
         flg = self.sonaEnableCb.IsChecked()
         gv.iMapMgr.enableSonar(flg)
+
+    def onEnableLidar(self, evt):
+        flg = self.lidarOnCB.IsChecked()
+        gv.iMapMgr.setLidarOn(flg)
+
+    def onEnableCam(self, evt):
+        flg = self.camOnCB.IsChecked()
+        gv.iMapMgr.setCamOn(flg)
+
+    def onEnableCamDetect(self, evt):
+        flg = self.camDectOnCB.IsChecked()
+        gv.iMapMgr.setCamDetectionOn(flg)
 
     def onShowSonar(self, event):
         flg = self.showSonarMCB.IsChecked()

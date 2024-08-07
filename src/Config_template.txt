@@ -20,4 +20,4 @@ HM_DIR:heatmap
 SC_DIR:scenario
 
 # Flag to scale the image or not
- SCALE_IMG:True
+SCALE_IMG:True

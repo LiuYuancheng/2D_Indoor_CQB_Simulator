@@ -266,12 +266,22 @@ class MapMgr(object):
         self.sonaOn = False
         self.mapMatrix = None
         self.sonarData = None
+        
         self.soundData = None
         
-        self.lidarOnflg = True
+        self.lidarOnflg = False
         self.lidarDetectDis = 0
         self.lidarDetecPt = None # front lidar detection point
         
+        self.camOnFlg = False
+        self.camAngle = 15
+        self.camDetectDisL = 0
+        self.camDetectDisR = 0
+        self.camDetecPtL = None # left camera detection point
+        self.camDetecPtR = None # right camera detection point
+        self.camEnemyDetFlg = False
+        self.camEnemyDetIdxList = []
+
         self.obstacleAvdFlg = False
 
     def initMapMatix(self):
@@ -297,7 +307,7 @@ class MapMgr(object):
                 if data[j] == 1:
                     self.mapMatrix[i+offsetY][j+offsetX] = 1
         self.mapMatrix = arr
-        gv.gDebugPrint("Map matrix %s" %str(arr), prt=False, logType=gv.LOG_INFO)
+        #gv.gDebugPrint("Map matrix %s" %str(arr), prt=False, logType=gv.LOG_INFO)
         
     def reInit(self):
         self.robot = None
@@ -443,6 +453,10 @@ class MapMgr(object):
         if self.robot and self.mapMatrix:
             x, y = self.robot.getCrtPos()
             degree = self.getRobotDirDegree()
+            lidarDis, lidarPt = self._calculateBeamTouch((x, y), degree)
+            self.lidarDetectDis = lidarDis
+            self.lidarDetecPt = lidarPt
+            return 
             degAClk = degree - 10
             degClk = degree + 10
             detX = x
@@ -465,9 +479,65 @@ class MapMgr(object):
             self.lidarDetecPt = (detX, detY)
             #print(self.lidarDetecPt) 
 
+    def calCameDetect(self):
+        # calculate the camera detection
+        if self.robot and self.mapMatrix:
+            x, y = self.robot.getCrtPos()
+            degree = self.getRobotDirDegree()
+            degAClk = degree - self.camAngle
+            degClk =  degree + self.camAngle
+            ldis, lpt = self._calculateBeamTouch((x, y), degAClk)
+            rdis, rpt = self._calculateBeamTouch((x, y), degClk)
+            self.camDetectDisL = ldis
+            self.camDetecPtL = lpt
+            self.camDetectDisR = rdis
+            self.camDetecPtR = rpt
+
+    def _calculateBeamTouch(self, pos, degree):
+        x, y = pos
+        detX = x
+        detY = y
+        detectDis = 0
+        while True:
+            detIdx = x + int(detectDis*math.sin(math.radians(degree)))
+            detIdy = y - int(detectDis*math.cos(math.radians(degree)))
+            # Detection out of range
+            if detIdx >= 900 or detIdx <= 0 or detIdy >= 600 or detIdy <= 0:
+                detX = detIdx
+                detY = detIdy
+                break
+            if self.mapMatrix[detIdy][detIdx] == 1:
+                detX = detIdx
+                detY = detIdy
+                break
+            detectDis += 1
+        return detectDis, (detX, detY)
+
     def checkObstacle(self):
         if 0 < self.lidarDetectDis < 20:
             self.startMove(False)
+
+    def checkCamEnemyDetect(self):
+        if self.robot is None or len(self.enemys) == 0: return
+        robotPos = self.robot.getCrtPos()
+        capturedEnmeyIdxList = []
+        degree = self.getRobotDirDegree()
+        degAClk = degree - self.camAngle
+        degClk =  degree + self.camAngle
+        for idx, enemyObj in enumerate(self.enemys):
+            enemyPos = enemyObj.getOrgPos()
+            x = int(enemyPos[0] - robotPos[0])
+            y = int(enemyPos[1] - robotPos[1])
+            degreeVal = int(180 - math.degrees(math.atan2(x, y)))
+            # Check enemy in the camera detection range
+            if degAClk <= degreeVal <=degClk:
+                dist = math.sqrt(x**2 + y**2)
+                if dist <= max(self.lidarDetectDis, max(self.camDetectDisL, self.camDetectDisR)):
+                #self.camDetectDisL and dist <= self.camDetectDisR and dist<=self.lidarDetectDis:
+                    capturedEnmeyIdxList.append(idx)
+        #print(capturedEnmeyIdxList)
+        
+        self.camEnemyDetIdxList = capturedEnmeyIdxList.copy()
 
     #-----------------------------------------------------------------------------
     def getSonarData(self):
@@ -478,6 +548,18 @@ class MapMgr(object):
 
     def getLidarData(self):
         return self.lidarDetectDis, self.lidarDetecPt
+
+    def getCamData(self):
+        data = {
+            'leftDis': self.camDetectDisL,
+            'leftPt': self.camDetecPtL,
+            'rightDis': self.camDetectDisR,
+            'rightPt': self.camDetecPtR
+        }
+        return data
+
+    def getCamEnemyDetectList(self):
+        return self.camEnemyDetIdxList
 
     #-----------------------------------------------------------------------------
     def genRandomPred(self, ranRange=50):
@@ -497,6 +579,8 @@ class MapMgr(object):
             self.calcuSoundDir()
             if self.lidarOnflg: self.calLidarDetect()
             if self.obstacleAvdFlg: self.checkObstacle()
+            if self.camOnFlg: self.calCameDetect()
+            if self.camEnemyDetFlg: self.checkCamEnemyDetect()
                 
     #-----------------------------------------------------------------------------
     def updateSensorsDis(self):
@@ -533,6 +617,15 @@ class MapMgr(object):
         for info in enemyDict:
             id, pos = info
             self.addEnemy(pos)
+
+    def setLidarOn(self, lidarOnFlag):
+        self.lidarOnflg = lidarOnFlag
+
+    def setCamOn(self, camOnFlag):
+        self.camOnFlg = camOnFlag
+
+    def setCamDetectionOn(self, camEnemyDetFlag):
+        self.camEnemyDetFlg = camEnemyDetFlag
 
     def setObsAvoid(self, obsAvoidFlag):
         self.obstacleAvdFlg = obsAvoidFlag

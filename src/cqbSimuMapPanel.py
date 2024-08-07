@@ -40,6 +40,8 @@ class PanelRealworldMap(wx.Panel):
         self.showHeatmap = False
         self.showSonarFlg = False
         self.showLidarFlg = True
+        self.showCamFlg = True
+        self.showCamDetect = True
 
         self.Bind(wx.EVT_PAINT, self.onPaint)
         self.SetDoubleBuffered(True)
@@ -70,6 +72,7 @@ class PanelRealworldMap(wx.Panel):
         # Draw the robot
         robotObj = gv.iMapMgr.getRobot()
         if robotObj:
+            pos = robotObj.getCrtPos()
             # Draw the route
             if self.showRouteFlg:
                 waypts = robotObj.getRoutePts()
@@ -90,7 +93,6 @@ class PanelRealworldMap(wx.Panel):
             if self.showSonarFlg:
                 disVal = gv.iMapMgr.getSonarData()
                 if disVal:
-                    pos = robotObj.getCrtPos()
                     color = wx.Colour(31, 156, 229) if self.toggle else wx.Colour('BLUE')
                     pen = wx.Pen(color, 1, style=wx.PENSTYLE_LONG_DASH)
                     dc.SetPen(pen)
@@ -111,13 +113,36 @@ class PanelRealworldMap(wx.Panel):
                         pen = wx.Pen(wx.Colour(169, 167, 12), 1) if self.toggle else wx.Pen(wx.Colour(127, 31, 31), 1, style=wx.PENSTYLE_LONG_DASH)
                         #pen = wx.Pen(wx.Colour(169, 167, 12), 1, style=wx.PENSTYLE_LONG_DASH)
                         dc.SetPen(pen)
-                        pos = robotObj.getCrtPos()
                         dc.DrawLine(pos[0], pos[1], lidarPt[0], lidarPt[1])
                         dc.SetBrush(wx.Brush(wx.Colour(127, 31, 31)))
                         dc.DrawCircle(lidarPt[0], lidarPt[1], 3)
 
+        # Draw the camera     
+            if self.showCamFlg:
+                camData = gv.iMapMgr.getCamData()
+                if camData:
+                    leftDis = camData['leftDis']
+                    rightDis = camData['rightDis']
+                    leftPt = camData['leftPt']
+                    rightPt = camData['rightPt']
+                    dc.SetPen(wx.Pen(wx.Colour(67, 138, 85), 1, style=wx.PENSTYLE_LONG_DASH))
+                    if leftDis > 0 and leftPt:
+                        dc.DrawLine(pos[0], pos[1], leftPt[0], leftPt[1])
+                    if rightDis > 0 and rightPt:
+                        dc.DrawLine(pos[0], pos[1], rightPt[0], rightPt[1])
+
+                    # Show enemy detection
+                    if self.showCamDetect:
+                        dc.SetPen(wx.Pen(wx.Colour('RED'), 2))
+                        enemies = gv.iMapMgr.getEnemy()
+                        detectedEnemy = gv.iMapMgr.getCamEnemyDetectList()
+                        if len(enemies) > 0 and len(detectedEnemy) > 0:
+                            for idx in detectedEnemy:
+                                enemyObj = enemies[idx]
+                                enemyPos = enemyObj.getOrgPos()
+                                dc.DrawLine(pos[0], pos[1], enemyPos[0], enemyPos[1])
+
             # Draw robot and transparent enemy detection area.
-            pos = robotObj.getCrtPos()
             if self.showDetectFlg:
                 dc.SetPen(wx.Pen(wx.Colour(157, 204, 149), 1, style=wx.PENSTYLE_LONG_DASH))
                 color = wx.Colour(157, 204, 149, 128) if self.toggle else wx.Colour(157, 204, 149, 20)
@@ -128,6 +153,7 @@ class PanelRealworldMap(wx.Panel):
             dc.SetPen(self.defaultPen)
             dc.DrawCircle(pos[0], pos[1], 8)
         
+
         # drow the enemies
         if self.showEnemyFlg:
             dc.SetPen(self.defaultPen)
