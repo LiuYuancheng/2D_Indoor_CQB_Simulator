@@ -4,15 +4,16 @@
 #
 # Purpose:     This module is used to create different function panels which can 
 #              handle user's interaction (such as paramters adjustment) for the 
-#              CQB simulation program.
+#              CQB robot simulation program.
 #
 # Author:      Yuancheng Liu
 #
 # Created:     2024/07/30
-# Version:     v_0.1.1
+# Version:     v_0.1.2
 # Copyright:   Copyright (c) 2024 LiuYuancheng
 # License:     MIT License
 #-----------------------------------------------------------------------------
+
 import os 
 import wx
 from datetime import datetime
@@ -25,7 +26,7 @@ from ConfigLoader import JsonLoader
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelViewerCtrl(wx.Panel):
-    """ Control Panel for the change the viewer diaplay map setting."""
+    """ Control Panel for changing the viewer diaplay map setting."""
 
     def __init__(self, parent, panelSize=(900, 300)):
         wx.Panel.__init__(self, parent, size=panelSize)
@@ -33,50 +34,42 @@ class PanelViewerCtrl(wx.Panel):
         self.SetSizer(self._buildUISizer())
 
     #-----------------------------------------------------------------------------
+    # define all the private functions
+    def _addDividerLinetoSizer(self, sizer, lineSize, 
+                               space=5, lineSytle=wx.LI_HORIZONTAL, layout=wx.CENTER):
+        """ Add a divider line to the sizer."""
+        sizer.AddSpacer(space)
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=lineSize, style=lineSytle), 
+                  flag=layout, border=2)
+        sizer.AddSpacer(space)
+
+    #-----------------------------------------------------------------------------
     def _buildUISizer(self):
+        """Build the panel main display sizer"""
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(5)
+        # Row idx = 0
         # Add the simulation scenario play control panel.
-        sizer.AddSpacer(5)
         sizer.Add(self._buildSimuCtrlSizer(), flag=flagsL, border=2)
-        
-        sizer.AddSpacer(5)
-        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(900, -1),
-                                 style=wx.LI_HORIZONTAL), flag=wx.CENTER, border=2)
-        sizer.AddSpacer(5)
-        # Add the display control panel.
+        self._addDividerLinetoSizer(sizer, (900, -1), lineSytle=wx.LI_HORIZONTAL)
+        # Row idx = 1
         hbox = wx.BoxSizer(wx.HORIZONTAL)
+        # Add the viewer map display control panel.
         hbox.Add(self._buildDisplayCtrlSizer(), flag=flagsL, border=2)
-        hbox.AddSpacer(10)
-        hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
-                                 style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
-        hbox.AddSpacer(10)
-        
-        hbox.Add(self._buildSensorDisSizer() , flag=flagsL, border=2)
-        
-        hbox.AddSpacer(10)
-        hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
-                                 style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
-        hbox.AddSpacer(10)
-        
+        self._addDividerLinetoSizer(hbox, (-1, 210), space=10, lineSytle=wx.LI_VERTICAL, layout=wx.LEFT)
+        # Add the sensor display sizer        
+        hbox.Add(self._buildSensorDisSizer(), flag=flagsL, border=2)
+        self._addDividerLinetoSizer(hbox, (-1, 210), space=10, lineSytle=wx.LI_VERTICAL, layout=wx.LEFT)
+        # Add the robot control sizer
         hbox.Add(self._buildRobotCtrlSizer() , flag=flagsL, border=2)
-
-        hbox.AddSpacer(10)
-        hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
-                                 style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
-        hbox.AddSpacer(10)
-
+        self._addDividerLinetoSizer(hbox, (-1, 210), space=10, lineSytle=wx.LI_VERTICAL, layout=wx.LEFT)
+        # Add the robot sound detection display sizer
         hbox.Add(self._buildSoundDetectSizer() , flag=flagsL, border=2)
-        sizer.Add(hbox, flag=flagsL, border=2)
-
-        hbox.AddSpacer(10)
-        hbox.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 210),
-                                 style=wx.LI_VERTICAL), flag=wx.LEFT, border=2)
-        hbox.AddSpacer(10)
-
+        self._addDividerLinetoSizer(hbox, (-1, 210), space=10, lineSytle=wx.LI_VERTICAL, layout=wx.LEFT)
+        # Add the robot lidar and camera control sizer
         hbox.Add(self._buildLidarDetectSizer() , flag=flagsL, border=2)
         sizer.Add(hbox, flag=flagsL, border=2)
-
         sizer.AddSpacer(5)
         return sizer
 
@@ -91,13 +84,13 @@ class PanelViewerCtrl(wx.Panel):
         forwardBmp = wx.Bitmap(os.path.join(gv.IMG_FD, 'forward.png'), wx.BITMAP_TYPE_ANY)
 
         flagsL = wx.LEFT
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
         font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
         label = wx.StaticText(self, label="Simulation Play Control : ")
         label.SetFont(font)
         sizer.Add(label, flag= wx.LEFT | wx.ALIGN_CENTER_VERTICAL, border=2)
         sizer.AddSpacer(10)
-        # Add the stepping through back button.
+        # Add the play timeline step through backward button.
         self.backBt = wx.BitmapButton(self, bitmap=backBmp,
                                        size=(backBmp.GetWidth()+5, backBmp.GetHeight()+5))
         self.backBt.Bind(wx.EVT_BUTTON, self.backSimulation)
@@ -121,18 +114,17 @@ class PanelViewerCtrl(wx.Panel):
         self.resetBt.Bind(wx.EVT_BUTTON, self.resetSimulation)
         sizer.Add(self.resetBt, flag=flagsL, border=2)
         sizer.AddSpacer(5)
-        # Add the stepping through forward button.
+        # Add the play timeline step through forward button.
         self.forwardBt = wx.BitmapButton(self, bitmap=forwardBmp,
                                        size=(forwardBmp.GetWidth()+5, forwardBmp.GetHeight()+5))
         self.forwardBt.Bind(wx.EVT_BUTTON, self.forwardSimulation)
         sizer.Add(self.forwardBt, flag=flagsL, border=2)
-        sizer.AddSpacer(20)
-
-        self.obsAvoidCB = wx.CheckBox(self, label = 'Enable Lidar Obstacle Avoidance')
+        sizer.AddSpacer(10)
+        # Add the Obstacle Avoidance control check box
+        self.obsAvoidCB = wx.CheckBox(self, label = 'Enable Obstacle Avoidance')
         self.obsAvoidCB.Bind(wx.EVT_CHECKBOX, self.onObsAvoid)
         sizer.Add(self.obsAvoidCB, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL, border=2)
-        sizer.AddSpacer(5)
-
+        sizer.AddSpacer(20)
         # Add the state display 
         stlabel = wx.StaticText(self, label="State : ")
         stlabel.SetFont(font)
@@ -146,21 +138,20 @@ class PanelViewerCtrl(wx.Panel):
 
     #-----------------------------------------------------------------------------
     def _buildDisplayCtrlSizer(self):
-        """Build the display control sizer."""
+        """Build the viewer map panel display control sizer."""
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
-        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
         label = wx.StaticText(self, label="Display Control")
-        label.SetFont(font)
+        label.SetFont(wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(10)
-        # Add the show detection area enable/disable checkbox
-        self.showDetectCB = wx.CheckBox(self, label = 'Show Robot Detection Area')
+        # Add the checkbox to show robot detection area enable/disable 
+        self.showDetectCB = wx.CheckBox(self, label='Show Robot Detection Area')
         self.showDetectCB.Bind(wx.EVT_CHECKBOX, self.onShowDetect)
         self.showDetectCB.SetValue(True)
         sizer.Add(self.showDetectCB, flag=flagsL, border=2)
         sizer.AddSpacer(5)
-        # Add the route enable/disable checkbox
+        # Add the route display enable/disable checkbox
         self.showRouteCB = wx.CheckBox(self, label = 'Show Robot Route')
         self.showRouteCB.Bind(wx.EVT_CHECKBOX, self.onShowRoute)
         self.showRouteCB.SetValue(False)
@@ -200,11 +191,13 @@ class PanelViewerCtrl(wx.Panel):
     
     #-----------------------------------------------------------------------------
     def _buildSensorDisSizer(self):
+        """ Build the sizer with all the components to show the robot movement sensor 
+            data.
+        """
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
-        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
         label = wx.StaticText(self, label="Robot Movement Sensors ")
-        label.SetFont(font)
+        label.SetFont(wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(10)
 
@@ -244,11 +237,11 @@ class PanelViewerCtrl(wx.Panel):
 
     #-----------------------------------------------------------------------------
     def _buildRobotCtrlSizer(self):
+        """ Build the robot manual control sizer."""
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
-        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
         label = wx.StaticText(self, label="Robot Manual Control")
-        label.SetFont(font)
+        label.SetFont(font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(5)
         gSizer = wx.GridSizer(3, 3, 2, 2)
@@ -263,61 +256,55 @@ class PanelViewerCtrl(wx.Panel):
                         bmp.GetWidth()+4, bmp.GetHeight()+4), name=btnName)
             movBtn.Bind(wx.EVT_BUTTON, self.onRobotMove)
             gSizer.Add(movBtn, flag=flagsL, border=0)
-
         sizer.Add(gSizer, flag=flagsL, border=2)
         return sizer
 
     #-----------------------------------------------------------------------------
     def _buildSoundDetectSizer(self):
+        """ Build the robot sound detection display sizer. """
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
-        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
         label = wx.StaticText(self, label="Sound Detection")
-        label.SetFont(font)
+        label.SetFont(wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(10)
         gv.iDetectPanel = PanelDetection(self)
         sizer.Add(gv.iDetectPanel, flag=flagsL, border=2)
         return sizer
     
+    #-----------------------------------------------------------------------------
     def _buildLidarDetectSizer(self):
+        """ Build the robot lidar and camera control sizer. """
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
-        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
         label = wx.StaticText(self, label="Lidar and Cam Ctrl")
-        label.SetFont(font)
+        label.SetFont(font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(10)
-
-        sizer.Add(wx.StaticText(self, label="Front Lidar Ctrl:"), flag=flagsL, border=2)
+        # Lidar control
+        sizer.Add(wx.StaticText(self, label="Front Lidar Ctrl : "), flag=flagsL, border=2)
         sizer.AddSpacer(5)
-
         self.lidarOnCB = wx.CheckBox(self, label = 'Turn on Front Lidar')
         self.lidarOnCB.Bind(wx.EVT_CHECKBOX, self.onEnableLidar)
         self.lidarOnCB.SetValue(False)
         sizer.Add(self.lidarOnCB, flag=flagsL, border=2)
         sizer.AddSpacer(10)
-
+        # Camera control
         sizer.Add(wx.StaticText(self, label="Front Camera Ctrl:"), flag=flagsL, border=2)
         sizer.AddSpacer(5)
-
         self.camOnCB = wx.CheckBox(self, label = 'Turn on Front Camera')
         self.camOnCB.Bind(wx.EVT_CHECKBOX, self.onEnableCam)
         self.camOnCB.SetValue(False)
         sizer.Add(self.camOnCB, flag=flagsL, border=2)
         sizer.AddSpacer(5)
-
         self.camDectOnCB = wx.CheckBox(self, label = 'Visual Enemy Detection')
         self.camDectOnCB.Bind(wx.EVT_CHECKBOX, self.onEnableCamDetect)
         self.camDectOnCB.SetValue(False)
         sizer.Add(self.camDectOnCB, flag=flagsL, border=2)
-
-
         return sizer
 
-
     #-----------------------------------------------------------------------------
-    # define all the play button event handling function here.
+    # define all the play control sizer event handling function here.
     def startSimulation(self, event):
         gv.gDebugPrint("Start simulation")
         self.stValLb.SetForegroundColour(wx.Colour(67, 138, 85))
@@ -350,6 +337,33 @@ class PanelViewerCtrl(wx.Panel):
 
     #-----------------------------------------------------------------------------
     # Define all the check box event handling function here
+    def onEnableSonar(self, event):
+        flg = self.sonaEnableCb.IsChecked()
+        gv.iMapMgr.enableSonar(flg)
+
+    def onEnableLidar(self, evt):
+        flg = self.lidarOnCB.IsChecked()
+        gv.iMapMgr.setLidarOn(flg)
+
+    def onEnableCam(self, evt):
+        flg = self.camOnCB.IsChecked()
+        gv.iMapMgr.setCamOn(flg)
+
+    def onEnableCamDetect(self, evt):
+        flg = self.camDectOnCB.IsChecked()
+        gv.iMapMgr.setCamDetectionOn(flg)
+    
+    def onObsAvoid(self, event):
+        flg = self.obsAvoidCB.IsChecked()
+        gv.iMapMgr.setObsAvoid(flg)
+
+    def onRobotMove(self, event):
+        """ Handle the robot manual move event """
+        cmd = str(event.GetEventObject().GetName())
+        gv.gDebugPrint("Manual Control Robot Move dir %s" %cmd, logType=gv.LOG_INFO)
+        moveflag = cmd != 'return'
+        gv.iMapMgr.setRobotManualMove(moveflag, cmd)
+
     def onShowDetect(self, event):
         flg = self.showDetectCB.IsChecked()
         gv.iRWMapPnl.setShowDetect(flg)
@@ -374,37 +388,9 @@ class PanelViewerCtrl(wx.Panel):
         flg = self.showHeatMapCB.IsChecked()
         gv.iRWMapPnl.setShowHeatmap(flg)
 
-    def onEnableSonar(self, event):
-        flg = self.sonaEnableCb.IsChecked()
-        gv.iMapMgr.enableSonar(flg)
-
-    def onEnableLidar(self, evt):
-        flg = self.lidarOnCB.IsChecked()
-        gv.iMapMgr.setLidarOn(flg)
-
-    def onEnableCam(self, evt):
-        flg = self.camOnCB.IsChecked()
-        gv.iMapMgr.setCamOn(flg)
-
-    def onEnableCamDetect(self, evt):
-        flg = self.camDectOnCB.IsChecked()
-        gv.iMapMgr.setCamDetectionOn(flg)
-
     def onShowSonar(self, event):
         flg = self.showSonarMCB.IsChecked()
         gv.iRWMapPnl.setShowSonar(flg)
-
-    def onRobotMove(self, event):
-        """ Add a cmd to the cmd queue when user press a control button on UI."""
-        cmd = str(event.GetEventObject().GetName())
-        gv.gDebugPrint("Manual Control Robot Move dir %s" % cmd, logType=gv.LOG_INFO)
-        moveflag = cmd != 'return'
-        gv.iMapMgr.setRobotManualMove(moveflag, cmd)
-
-    def onObsAvoid(self, event):
-        flg = self.obsAvoidCB.IsChecked()
-        gv.iMapMgr.setObsAvoid(flg)
-
 
     #-----------------------------------------------------------------------------
     def updateMovSensorsData(self, dataDict):
@@ -424,7 +410,7 @@ class PanelViewerCtrl(wx.Panel):
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelEditorCtrl(wx.Panel):
-    """ Control Panel for the change the editor diaplay map setting."""
+    """ Control Panel for changing the editor diaplay map setting."""
 
     def __init__(self, parent, panelSize=(850, 300)):
         wx.Panel.__init__(self, parent, size=panelSize)
@@ -432,34 +418,33 @@ class PanelEditorCtrl(wx.Panel):
         self.SetSizer(self._buildUISizer())
 
     #-----------------------------------------------------------------------------
+    # define all the private functions
+    def _addDividerLinetoSizer(self, sizer, lineSize, 
+                               space=5, lineSytle=wx.LI_HORIZONTAL, layout=wx.CENTER):
+        """ Add a divider line to the sizer."""
+        sizer.AddSpacer(space)
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=lineSize, style=lineSytle), 
+                  flag=layout, border=2)
+        sizer.AddSpacer(space)
+
+    #-----------------------------------------------------------------------------
     def _buildUISizer(self):
+        """Build the panel main display sizer"""
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.AddSpacer(5)
         # map information sizer
         sizer.Add(self._buildMapInfoSizer(), flag=flagsL, border=2)
-        sizer.AddSpacer(10)
-        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
-                                 style=wx.LI_VERTICAL), flag=flagsL, border=2)
-        sizer.AddSpacer(10)
-        # target paramters control sizer
+        self._addDividerLinetoSizer(sizer, (-1, 220), space=10, lineSytle=wx.LI_VERTICAL, layout=flagsL)
+        # selected target paramters control sizer
         sizer.Add(self._buildTargetCtrlSizer(), flag=flagsL, border=2)
-        sizer.AddSpacer(10)
-        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
-                                 style=wx.LI_VERTICAL), flag=flagsL, border=2)
-        sizer.AddSpacer(10)
+        self._addDividerLinetoSizer(sizer, (-1, 220), space=10, lineSytle=wx.LI_VERTICAL, layout=flagsL)
         # prediction control sizer
         sizer.Add(self._buildPredCtrlSizer(), flag=flagsL, border=2)
-        sizer.AddSpacer(10)
-        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
-                                 style=wx.LI_VERTICAL), flag=flagsL, border=2)
-        sizer.AddSpacer(10)
+        self._addDividerLinetoSizer(sizer, (-1, 220), space=10, lineSytle=wx.LI_VERTICAL, layout=flagsL)
         # prediction control sizer
-        sizer.Add(self._buildScenCtrloSizer(), flag=flagsL, border=2)
-        sizer.AddSpacer(10)
-        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(-1, 220),
-                                 style=wx.LI_VERTICAL), flag=flagsL, border=2)
-        sizer.AddSpacer(10)
+        sizer.Add(self._buildScenCtrlSizer(), flag=flagsL, border=2)
+        self._addDividerLinetoSizer(sizer, (-1, 220), space=10, lineSytle=wx.LI_VERTICAL, layout=flagsL)
         return sizer
         
     #-----------------------------------------------------------------------------
@@ -468,14 +453,14 @@ class PanelEditorCtrl(wx.Panel):
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.AddSpacer(5)
-        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
         label = wx.StaticText(self, label="Map Informaion")
-        label.SetFont(font)
+        label.SetFont(wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(5)
         # building blue print info
         label = wx.StaticText(self, label="Building Blue Print :")
         sizer.Add(label, flag=flagsL, border=2)
+        sizer.AddSpacer(5)
         self.bpval = wx.TextCtrl(self, -1, " ",size=(200, 25))
         sizer.Add(self.bpval, flag=flagsL, border=2)
         sizer.AddSpacer(5)
@@ -507,7 +492,7 @@ class PanelEditorCtrl(wx.Panel):
 
     #-----------------------------------------------------------------------------
     def _buildTargetCtrlSizer(self):
-        """ Target control sizer. """
+        """ Build the selected target control sizer. """
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.AddSpacer(5)
@@ -546,46 +531,44 @@ class PanelEditorCtrl(wx.Panel):
 
     #-----------------------------------------------------------------------------
     def _buildPredCtrlSizer(self):
-        """Prediction control sizer. """
+        """ Enemy prediction control sizer. """
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.AddSpacer(5)
-        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
         label = wx.StaticText(self, label="Prediction Control")
-        label.SetFont(font)
+        label.SetFont(wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         sizer.Add(label, flag=flagsL, border=2)
-        sizer.AddSpacer(5)
+        sizer.AddSpacer(10)
         self.predGenbtn = wx.Button(self, -1, "Generate Random Prediction")
         self.predGenbtn.Bind(wx.EVT_BUTTON, self.onGeneratePred)
         sizer.Add(self.predGenbtn, flag=flagsL, border=2)
         sizer.AddSpacer(10)
-        self.initMapMxbtn = wx.Button(self, -1, "Generate Map Matrix")
+        self.initMapMxbtn = wx.Button(self, -1, "Generate Floor Map Matrix")
         self.initMapMxbtn.Bind(wx.EVT_BUTTON, self.onGenerateMapMx)
         sizer.Add(self.initMapMxbtn, flag=flagsL, border=2)
         return sizer
 
     #-----------------------------------------------------------------------------
-    def _buildScenCtrloSizer(self):
+    def _buildScenCtrlSizer(self):
         """ Scenario control sizer. """
         flagsL = wx.LEFT
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.AddSpacer(5)
-        font = wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD)
         label = wx.StaticText(self, label="Scenario Control")
-        label.SetFont(font)
+        label.SetFont(wx.Font(10, wx.DECORATIVE, wx.NORMAL, wx.BOLD))
         sizer.Add(label, flag=flagsL, border=2)
         sizer.AddSpacer(5)
-        self.sceSavebtn = wx.Button(self, -1, "Save Current Scenario")
+        self.sceSavebtn = wx.Button(self, -1, "Save Current Scenario ")
         self.sceSavebtn.Bind(wx.EVT_BUTTON, self.onSaveScensrio)
         sizer.Add(self.sceSavebtn, flag=flagsL, border=2)
         sizer.AddSpacer(5)
-        self.sceLoadbtn = wx.Button(self, -1, "Load Saved Scenario   ")
+        self.sceLoadbtn = wx.Button(self, -1, "Load PreSaved Scenario")
         self.sceLoadbtn.Bind(wx.EVT_BUTTON, self.onLoadScensrio)
         sizer.Add(self.sceLoadbtn, flag=flagsL, border=2)
         sizer.AddSpacer(5)
-        self.sceNameLb = wx.StaticText(self, label="Loaded Scenario: None ")
+        sizer.Add(wx.StaticText(self, label="Current Scenario:"), flag=flagsL, border=2)
+        self.sceNameLb = wx.StaticText(self, label="None ")
         sizer.Add(self.sceNameLb, flag=flagsL, border=2)
-        sizer.AddSpacer(10)
         bm = wx.StaticBitmap(self, -1, wx.Bitmap(os.path.join(gv.IMG_FD, 'logMid.png'), 
                                                  wx.BITMAP_TYPE_ANY))
         sizer.Add(bm, flag=wx.LEFT, border=2)
@@ -594,24 +577,15 @@ class PanelEditorCtrl(wx.Panel):
 
     #-----------------------------------------------------------------------------
     # Define all the event handling function here
-    def onRemoveTarget(self, evt):
-        if gv.iMapMgr: gv.iMapMgr.deleteSelected()
-        if gv.iEDMapPnl:gv.iEDMapPnl.updateDisplay()
-        self.updateMapInfo()
-
-    def onRemoveRoute(self, evt):
-        if gv.iMapMgr: gv.iMapMgr.clearRobotRoute()
-        if gv.iEDMapPnl:gv.iEDMapPnl.updateDisplay()
-        self.updateMapInfo()
-
     def onEnableRoutePlan(self, evt):
         if gv.iEDMapPnl: 
             gv.gDebugPrint("Start to plan a robot route", logType=gv.LOG_INFO)
             gv.iEDMapPnl.enableAddWaypt(self.routePlanCB.IsChecked())
 
     def onEnableWPInfo(self, evt):
-        if gv.iEDMapPnl: gv.iEDMapPnl.enableWPInfo(self.showWPInfoCB.IsChecked())
-        if gv.iEDMapPnl:gv.iEDMapPnl.updateDisplay()
+        if gv.iEDMapPnl: 
+            gv.iEDMapPnl.enableWPInfo(self.showWPInfoCB.IsChecked())
+            gv.iEDMapPnl.updateDisplay()
 
     def onGeneratePred(self, evt):
         if gv.iMapMgr: gv.iMapMgr.genRandomPred()
@@ -619,12 +593,24 @@ class PanelEditorCtrl(wx.Panel):
     def onGenerateMapMx(self, evt):
         if gv.iMapMgr: gv.iMapMgr.initMapMatix()
 
-    #-----------------------------------------------------------------------------
+    def onRemoveTarget(self, evt):
+        if gv.iMapMgr and gv.iEDMapPnl:
+            gv.iMapMgr.deleteSelected()
+            gv.iEDMapPnl.updateDisplay()
+            self.updateMapInfo()
+
+    def onRemoveRoute(self, evt):
+        if gv.iMapMgr and gv.iEDMapPnl:
+            gv.iMapMgr.clearRobotRoute()
+            gv.iEDMapPnl.updateDisplay()
+            self.updateMapInfo()
+
     def onSaveScensrio(self, evt):
+        """ Save current editor scenario to a json file."""
         data = {
-            "bluePrint":  gv.gBluePrintFilePath,
+            "bluePrint": gv.gBluePrintFilePath,
             "robot": None,
-            "enemy":[]
+            "enemy": []
         }
         robotObj = gv.iMapMgr.getRobot()
         if robotObj:
@@ -642,11 +628,13 @@ class PanelEditorCtrl(wx.Panel):
         filePath = os.path.join(gv.gScenarioDir, "Scenario_%s.json" %str(date_time))
         saver.setJsonFilePath(filePath)
         saver.setJsonData(data)
-        gv.gDebugPrint("onSaveScensrio()> Save current scenario to file: %s" %filePath, logType=gv.LOG_INFO)
+        gv.gDebugPrint("onSaveScensrio()> Save current scenario to file: %s" %filePath, 
+                       logType=gv.LOG_INFO)
         saver.updateRcdFile()
 
     #-----------------------------------------------------------------------------
     def onLoadScensrio(self, evt):
+        """ Load a scenario from a json file."""
         openFileDialog = wx.FileDialog(self, "Open Scenario JSON File", gv.gScenarioDir, "", 
             "Packet Capture Files (*.json)|*.json", 
             wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
@@ -680,7 +668,7 @@ class PanelEditorCtrl(wx.Panel):
         self.bpval.SetValue(bpInfo)
 
     def updateScenarioName(self, filename):
-        self.sceNameLb.SetLabel("Loaded Scenario: %s" %str(filename))
+        self.sceNameLb.SetLabel(str(filename))
 
     def setMousePos(self, pos):
         self.mousPos.SetValue("X: %d, Y: %d" % (pos[0], pos[1]))
