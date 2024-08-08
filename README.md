@@ -95,8 +95,6 @@ When facing a area with the glass door, wood door(furniture)  and wall, the inte
 
   
 
-
-
 #### CQB Robot Sensor's Simulation Design
 
 The sensor system in CQB (Close Quarters Battle) robots is crucial for their ability to navigate, detect threats, and provide real-time intelligence in confined and potentially hostile environments. Normally the CQB robot sensor will includes 8 types:  `Optical Sensors`, `Thermal Imaging Sensors`, `Proximity and Obstacle Detection Sensors`, `Environmental Sensors`,  `Audio Sensors`, `Motion and Vibration Sensors`, `Communication and Signal Sensors` and `Multispectral and Hyperspectral Sensors`.  These sensors enable the robot to perform a variety of tasks, from mapping the environment to identifying potential dangers. 
@@ -112,6 +110,35 @@ In our system our program will simulate 5 types of sensors used on the robot, th
 - **Front LIDAR (Light Detection and Ranging)**: Measures distances by illuminating the target with laser light and measuring the reflection. LIDAR creates a 3D map of the environment, helping the robot navigate through tight spaces and avoid obstacles.
 
 The robot's enemy detection data processer integrates all the data from multiple sensors to create a comprehensive understanding of its environment. The enemy detection data processer will analysis the sensor fusion data and provide the square robot control member the confirmed enemy position and predicted enemy position for accuracy combine visual and decision making.
+
+
+
+#### Design of enemy detection and the prediction 
+
+We will simulate the enemy detection and predication progress in our system. 
+
+**Detection Enemy Position**
+
+To detect the enemy position in the map matrix, we will use the camera and lidar sensors. The camera sensor will keep scan the front sector area of the robot the check whether can detect the enemy pixel. When the camera "see" then enemy, as camera has no ability to measure the distance it will send the enemy direction data to the detection data processer module, then the module will use the Lidar to scan the direction to get the object (enemy) distance. Based on the robot own position, enemy direction and  enemy distance, the processer will calculate the enemy location on the map. 
+
+The enemy detection work flow is shown below:
+
+![](doc/img/rm06_enemyDect.png)
+
+**Predict Enemy Position**
+
+To predict the enemy position, we use the 360' Low frequency sound microphones array. The sound sensor will get the direction of the sound source, when the robot is moving, based on the trajectory recording and the enemy sound source direction data, the enemy data processer will calculate the approximate predicted position of the enemy behind the obstacles. The enemy prediction workflow is shown below:
+
+ ![](doc/img/rm07_enemyPred.png)
+
+During the predication calculation progress, We have the robot trajectory distance(X) from Time-T0 to Time-T1, the enemy sound direction(a) at Time-T0 with the robot position Pos-0  and the enemy sound direction(b) at Time-T1 with the robot position Pos-1.
+
+```
+tan(a) = Z/(X+Y)
+tan(b) = Z/Y
+```
+
+Then we can calculate the distance Y and Z, based on the Pos-1 we can calculate the enemy predication position.   
 
 
 

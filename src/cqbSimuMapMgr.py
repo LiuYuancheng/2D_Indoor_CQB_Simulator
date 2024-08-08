@@ -3,9 +3,10 @@
 # Name:        cqbSimuMapMgr.py
 #
 # Purpose:     The UI management module is used to control all the components on 
-#              the simulator map, this module will provide the components init 
-#              agent class, calculate the components' read time state and the 
-#              manager to handle other module's components adjustment request.
+#              the simulator map, this module will provide the components init agent 
+#              classes, calculate the components' real time state and interaction as 
+#              the physical world. The manager will also handle other module's (such
+#              as the control panels) adjustment request.
 # 
 # Author:      Yuancheng Liu
 #
@@ -24,18 +25,19 @@ import cqbSimuGlobal as gv
 ROB_TYPE = 0 
 EMY_TYPE = 1
 PRE_TYPE = 2
-
+# manual control direction dict
 DIR_DICT = {
-    'upleft': (-1, -1),
-    'up': (0, -1),
-    'upright': (1, -1),
-    'left': (-1, 0),
-    'return': (0, 0),
-    'right': (1, 0),
-    'downleft': (-1, 1),
-    'down': (0, 1),
-    'downright': (1, 1)
+    'upleft'    : (-1, -1),
+    'up'        : (0, -1),
+    'upright'   : (1, -1),
+    'left'      : (-1, 0),
+    'return'    : (0, 0),
+    'right'     : (1, 0),
+    'downleft'  : (-1, 1),
+    'down'      : (0, 1),
+    'downright' : (1, 1)
 }
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class AgentTarget(object):
@@ -86,7 +88,9 @@ class AgentTarget(object):
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class AgentEnemy(AgentTarget):
-    """ Agent enemy class, inherit from the AgentTarget class. enemies are stationary"""
+    """ Agent enemy class, inherit from the <AgentTarget> class. In current version
+        enemies are stationary
+    """
 
     def __init__(self, parent, tgtID, pos):
         """ Init refer to the class <AgentTarget>. """
@@ -102,7 +106,7 @@ class AgentEnemy(AgentTarget):
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class AgentRobot(AgentTarget):
-    """ Agent robot class, inherit from the AgentTarget class. robots are moving. """
+    """ Agent robot class, inherit from the <AgentTarget> class. robots are moving. """
     def __init__(self, parent, tgtID, pos, speed=10, traMaxSize=100):
         """ 
             Args:
@@ -115,20 +119,21 @@ class AgentRobot(AgentTarget):
         self.crtPos = pos.copy()            # Current robot position
         self.routePts = [self.orgPos, ]     # route list
         self.trajectory = [self.orgPos, ]   # trajectory list
-        self.trajectoryMaxSize = traMaxSize
+        self.trajectoryMaxSize = traMaxSize # max size of trajectory list
         # Init the stepping through parameters
-        self.traplayStepIdx = 0     # Curret position Idx in the trajectory list
-        self.traplayStepMode = False  # stepping through mode
+        self.traplayStepMode = False    # Stepping through mode
+        self.traplayStepIdx = 0         # Curret position Idx in the trajectory list
         # Init the move paramters.
         self.autoMoveFlg = False
         self.moveTgtIdx = 0  # the target way point index in the planned route.
         self.moveSpeed = speed
-        self.manualCtrl = False
-        self.direction = DIR_DICT['return']
+        self.manualCtrl = False # matnual control flag.
+        self.direction = DIR_DICT['return'] # Robot head direction.
 
     #-----------------------------------------------------------------------------
+    # route and trajectory functions
     def _addPosInTra(self, pos):
-        """ Add a new position to the trajectory list."""
+        """ Add a new position in the trajectory list."""
         if len(self.trajectory) >= self.trajectoryMaxSize: self.trajectory.pop(0)
         lastPoint = self.trajectory[-1]
         if lastPoint[0] != pos[0] or lastPoint[1] != pos[1]:
@@ -149,17 +154,18 @@ class AgentRobot(AgentTarget):
 
     def forward(self, timeInv=3):
         """ Stepping through move the robot to the next position in the trajectory 
-        list based on the input clock cycle number (timeInv)."""
+            list based on the input clock cycle number (timeInv).
+        """
         self.autoMoveFlg = False
         self.traplayStepMode = True
         self.traplayStepIdx += timeInv
-        if self.traplayStepIdx >= len(self.trajectory):
-            self.traplayStepIdx = len(self.trajectory)-1
+        if self.traplayStepIdx >= len(self.trajectory): self.traplayStepIdx = len(self.trajectory)-1
         self.crtPos = self.trajectory[self.traplayStepIdx].copy()
 
     def backward(self, timeInv=3):
         """ Stepping through move the robot to the previous position in the trajectory 
-        list based on the input clock cycle number (timeInv)."""
+            list based on the input clock cycle number (timeInv).
+        """
         self.autoMoveFlg = False
         self.traplayStepMode = True
         self.traplayStepIdx -= timeInv
@@ -225,7 +231,7 @@ class AgentRobot(AgentTarget):
             self.crtPos[0] += self.direction[0]*self.moveSpeed
             self.crtPos[1] += self.direction[1]*self.moveSpeed
             self._addPosInTra(self.crtPos.copy())
-            return
+            return None
         # Auto move control 
         if not self.autoMoveFlg or len(self.routePts) == 1 : return
         if self.traplayStepMode:
@@ -234,7 +240,7 @@ class AgentRobot(AgentTarget):
                 self.traplayStepIdx += 1
             else:
                 self.traplayStepMode = False
-            return
+            return 
         else:
             # Update the current position under moving mode
             nextPt = self.routePts[self.moveTgtIdx]
@@ -256,23 +262,25 @@ class AgentRobot(AgentTarget):
 #-----------------------------------------------------------------------------
 class MapMgr(object):
     """ Map manager module to calculate and control all the interaction of map
-        components
+        components to simulate the real world.
     """
     def __init__(self) -> None:
         self.robot = None
-        self.robotDirDegree = 0
+        self.robotDirDegree = 0 # robot direction in degree
         self.enemys = []
         self.enemysIdCount = 0
-        self.sonaOn = False
+        # Environment map matrix
         self.mapMatrix = None
+        # Sonar control
+        self.sonaOn = False
         self.sonarData = None
-        
+        # microphone control
         self.soundData = None
-        
+        # Lidar control
         self.lidarOnflg = False
         self.lidarDetectDis = 0
         self.lidarDetecPt = None # front lidar detection point
-        
+        # Camera control
         self.camOnFlg = False
         self.camAngle = 15
         self.camDetectDisL = 0
@@ -281,40 +289,92 @@ class MapMgr(object):
         self.camDetecPtR = None # right camera detection point
         self.camEnemyDetFlg = False
         self.camEnemyDetIdxList = []
-
+        # Auto pilot flag
         self.obstacleAvdFlg = False
 
+    #-----------------------------------------------------------------------------
+    def initRobot(self, pos):
+        self.robot = AgentRobot(self, 0, pos)
+
+    def addEnemy(self, pos):
+        self.enemys.append(AgentEnemy(self, self.enemysIdCount, pos))
+        self.enemysIdCount += 1
+
+    def clearRobotRoute(self):
+        if self.robot: self.robot.clearRoute()
+
+    #-----------------------------------------------------------------------------
     def initMapMatix(self):
-        if gv.gBluePrintFilePath is None: return
-        rows, cols = (600, 900)
-        img = Image.open(gv.gBluePrintFilePath)
-        imW, imH = img.size
+        """ Load in the building blue print and create the environment map matrix."""
+        if gv.gBluePrintFilePath is None: 
+            gv.gDebugPrint("initMapMatix()> load the floor blue print first.", logType=gv.LOG_WARN)
+            return
+        # Build the empy env matrix
+        rows, cols = (600, 900) # 900 x 600 matrix (600 row, 900 colum)
         arr = [[0 for i in range(cols)] for j in range(rows)]
         self.mapMatrix = arr
+        # Build the build print image matrix 
+        img = Image.open(gv.gBluePrintFilePath)
+        imW, imH = img.size
         offsetX = (cols-imW) // 2
         offsetY = (rows-imH) // 2
-        
         arr2 = [[0 for i in range(imW)] for j in range(imH)]
+        # set the matrix material value.
         datas = img.getdata()
         for i, data in enumerate(datas):
             if data[0] + data[1] + data[2] <= 120:
                 arr2[i//imW][i%imW] = 1
-
-        #map arr2 to arr
+        # map image matrix to environment matrix
         for i in range(len(arr2)):
             data = arr2[i]
             for j in range(len(data)):
-                if data[j] == 1:
-                    self.mapMatrix[i+offsetY][j+offsetX] = 1
+                if data[j] == 1: self.mapMatrix[i+offsetY][j+offsetX] = 1
         self.mapMatrix = arr
         #gv.gDebugPrint("Map matrix %s" %str(arr), prt=False, logType=gv.LOG_INFO)
-        
+    
+    #-----------------------------------------------------------------------------
     def reInit(self):
+        """Clear the robot and enmeies for reinit."""
         self.robot = None
         self.enemys = []
         self.enemysIdCount = 0
 
-    def calcuSoundDir(self):
+    #-----------------------------------------------------------------------------
+    # define all the calculation() function here:
+    def _calculateBeamTouch(self, pos, degree):
+        """ Calculate the beam touch point in the map matrix. 
+        Args:
+            pos (list(int, int)): postion in the map matrix
+            degree (int): degree of the. 
+        Returns:
+            _type_: beam touch point in the map matrix and the distance
+                    (distance, postionTuple)
+        """
+        x, y = pos
+        detX = x
+        detY = y
+        detectDis = 0
+        while True:
+            detIdx = x + int(detectDis*math.sin(math.radians(degree)))
+            detIdy = y - int(detectDis*math.cos(math.radians(degree)))
+            # Detection out of range
+            if detIdx >= 900 or detIdx <= 0 or detIdy >= 600 or detIdy <= 0:
+                detX = detIdx
+                detY = detIdy
+                break
+            # detection the beam reflection point
+            if self.mapMatrix[detIdy][detIdx] == 1:
+                detX = detIdx
+                detY = detIdy
+                break
+            detectDis += 1
+        return detectDis, (detX, detY)
+
+    #-----------------------------------------------------------------------------
+    def calSoundDir(self):
+        """ Calculate the sound direction (degree) from the robot current postion 
+            to all the enemies. 
+        """
         if self.robot is None or len(self.enemys) == 0: return
         robotPos = self.robot.getCrtPos()
         soundDir = []
@@ -327,20 +387,104 @@ class MapMgr(object):
         self.soundData = soundDir.copy()
 
     #-----------------------------------------------------------------------------
-    # Robot control
-    def getSoundData(self):
-        return self.soundData
+    def calsonarData(self):
+        """ Calculate the sonar data from the robot current postion to four directions 
+            based on the map matrix. 
+        """
+        if self.robot and self.mapMatrix:
+            x, y = self.robot.getCrtPos()
+            maplineH = self.mapMatrix[y]
+            # Left sonar reflection
+            idxL = x
+            leftDis = 0
+            while idxL >= 0:
+                if maplineH[idxL] == 1:
+                    leftDis = x - idxL
+                    break
+                else:
+                    idxL -=1
+            # Right sonar reflection
+            idxR = x
+            rightDis = 0
+            while idxR < len(maplineH):
+                if maplineH[idxR] == 1:
+                    rightDis = idxR - x
+                    break
+                else:
+                    idxR += 1
+            maplineV = [self.mapMatrix[i][x] for i in range(600)]
+            # Up sonar reflection
+            idxF = y
+            frontDis = 0
+            while idxF >= 0:
+                if maplineV[idxF] == 1:
+                    frontDis = y - idxF
+                    break
+                else:
+                    idxF -=1
+            # Down sonar reflection
+            idxB = y
+            backDis = 0
+            while idxB < len(maplineV):
+                if maplineV[idxB] == 1:
+                    backDis = idxB - y
+                    break
+                else:
+                    idxB += 1
+    
+            self.sonarData = (frontDis, backDis, leftDis, rightDis)
+            #print(self.sonarData)
 
     #-----------------------------------------------------------------------------
-    def initRobot(self, pos):
-        self.robot = AgentRobot(self, 0, pos)
+    def calLidarDetect(self):
+        """Calculate the lidar detection calculation."""
+        if self.robot and self.mapMatrix:
+            x, y = self.robot.getCrtPos()
+            degree = self.getRobotDirDegree()
+            lidarDis, lidarPt = self._calculateBeamTouch((x, y), degree)
+            self.lidarDetectDis = lidarDis
+            self.lidarDetecPt = lidarPt
+            return 
 
-    def addEnemy(self, pos):
-        self.enemys.append(AgentEnemy(self, self.enemysIdCount, pos))
-        self.enemysIdCount += 1
+    #-----------------------------------------------------------------------------
+    def calCameDetect(self):
+        """Calculate the camera view detection. """
+        if self.robot and self.mapMatrix:
+            x, y = self.robot.getCrtPos()
+            degree = self.getRobotDirDegree()
+            degAClk = degree - self.camAngle
+            degClk =  degree + self.camAngle
+            ldis, lpt = self._calculateBeamTouch((x, y), degAClk)
+            rdis, rpt = self._calculateBeamTouch((x, y), degClk)
+            self.camDetectDisL = ldis
+            self.camDetecPtL = lpt
+            self.camDetectDisR = rdis
+            self.camDetecPtR = rpt
 
-    def clearRobotRoute(self):
-        if self.robot: self.robot.clearRoute()
+    #-----------------------------------------------------------------------------
+    def checkObstacle(self):
+        if 0 < self.lidarDetectDis < 20:
+            self.startMove(False)
+
+    def checkCamEnemyDetect(self):
+        if self.robot is None or len(self.enemys) == 0: return
+        robotPos = self.robot.getCrtPos()
+        capturedEnmeyIdxList = []
+        degree = self.getRobotDirDegree()
+        degAClk = degree - self.camAngle
+        degClk =  degree + self.camAngle
+        for idx, enemyObj in enumerate(self.enemys):
+            enemyPos = enemyObj.getOrgPos()
+            x = int(enemyPos[0] - robotPos[0])
+            y = int(enemyPos[1] - robotPos[1])
+            degreeVal = int(180 - math.degrees(math.atan2(x, y)))
+            # Check enemy in the camera detection range
+            if degAClk <= degreeVal <=degClk:
+                dist = math.sqrt(x**2 + y**2)
+                if dist <= max(self.lidarDetectDis, max(self.camDetectDisL, self.camDetectDisR)):
+                #self.camDetectDisL and dist <= self.camDetectDisR and dist<=self.lidarDetectDis:
+                    capturedEnmeyIdxList.append(idx)
+        self.camEnemyDetIdxList = capturedEnmeyIdxList.copy()
 
     #-----------------------------------------------------------------------------
     # Selection control
@@ -373,6 +517,7 @@ class MapMgr(object):
                 self.enemys.pop(i)
                 return None
 
+    #-----------------------------------------------------------------------------
     def enableSonar(self, flg):
         self.sonaOn = flg
 
@@ -391,8 +536,13 @@ class MapMgr(object):
                 return enemyObj
         return None 
 
-    #-----------------------------------------------------------------------------
+    def getSoundData(self):
+        return self.soundData
+
     def getSelectedInfo(self):
+        """ Return the selected target's id, position and type.
+            Return ('N.A', 'N.A', 'N.A') if no target is selected.
+        """
         if self.robot and self.robot.getSelected():
             return (self.robot.getID(), self.robot.getOrgPos(), 'Robot')
         else:
@@ -400,144 +550,6 @@ class MapMgr(object):
                 if enemyObj.getSelected():
                     return (enemyObj.getID(), enemyObj.getOrgPos(), 'Enemy')
         return ('N.A', 'N.A', 'N.A')
-
-    #-----------------------------------------------------------------------------
-    def calsonarData(self):
-        if self.robot and self.mapMatrix:
-            x, y = self.robot.getCrtPos()
-            leftDis = 0 
-            maplineH = self.mapMatrix[y]
-            idxL = x
-            while idxL >= 0:
-                if maplineH[idxL] == 1:
-                    leftDis = x - idxL
-                    break
-                else:
-                    idxL -=1
-            rightDis = 0
-            idxR = x
-            while idxR < len(maplineH):
-                if maplineH[idxR] == 1:
-                    rightDis = idxR - x
-                    break
-                else:
-                    idxR += 1
-
-            maplineV = []
-            for i in range(600):
-                maplineV.append(self.mapMatrix[i][x]) 
-
-            frontDis = 0
-            idxF = y
-            while idxF >= 0:
-                if maplineV[idxF] == 1:
-                    frontDis = y - idxF
-                    break
-                else:
-                    idxF -=1
-
-            backDis = 0
-            idxB = y
-            while idxB < len(maplineV):
-                if maplineV[idxB] == 1:
-                    backDis = idxB - y
-                    break
-                else:
-                    idxB += 1
-            self.sonarData = (frontDis, backDis, leftDis, rightDis)
-            #print(self.sonarData)
-
-    #-----------------------------------------------------------------------------
-    def calLidarDetect(self):
-        # calculate lidar beam
-        if self.robot and self.mapMatrix:
-            x, y = self.robot.getCrtPos()
-            degree = self.getRobotDirDegree()
-            lidarDis, lidarPt = self._calculateBeamTouch((x, y), degree)
-            self.lidarDetectDis = lidarDis
-            self.lidarDetecPt = lidarPt
-            return 
-            degAClk = degree - 10
-            degClk = degree + 10
-            detX = x
-            detY = y
-            detectDis = 0
-            while True:
-                detIdx = x + int(detectDis*math.sin(math.radians(degree)))
-                detIdy = y - int(detectDis*math.cos(math.radians(degree)))
-                # Detection out of range
-                if detIdx >= 900 or detIdx <= 0 or detIdy >= 600 or detIdy <= 0:
-                    detX = detIdx
-                    detY = detIdy
-                    break
-                if self.mapMatrix[detIdy][detIdx] == 1:
-                    detX = detIdx
-                    detY = detIdy
-                    break
-                detectDis += 1
-            self.lidarDetectDis= detectDis
-            self.lidarDetecPt = (detX, detY)
-            #print(self.lidarDetecPt) 
-
-    def calCameDetect(self):
-        # calculate the camera detection
-        if self.robot and self.mapMatrix:
-            x, y = self.robot.getCrtPos()
-            degree = self.getRobotDirDegree()
-            degAClk = degree - self.camAngle
-            degClk =  degree + self.camAngle
-            ldis, lpt = self._calculateBeamTouch((x, y), degAClk)
-            rdis, rpt = self._calculateBeamTouch((x, y), degClk)
-            self.camDetectDisL = ldis
-            self.camDetecPtL = lpt
-            self.camDetectDisR = rdis
-            self.camDetecPtR = rpt
-
-    def _calculateBeamTouch(self, pos, degree):
-        x, y = pos
-        detX = x
-        detY = y
-        detectDis = 0
-        while True:
-            detIdx = x + int(detectDis*math.sin(math.radians(degree)))
-            detIdy = y - int(detectDis*math.cos(math.radians(degree)))
-            # Detection out of range
-            if detIdx >= 900 or detIdx <= 0 or detIdy >= 600 or detIdy <= 0:
-                detX = detIdx
-                detY = detIdy
-                break
-            if self.mapMatrix[detIdy][detIdx] == 1:
-                detX = detIdx
-                detY = detIdy
-                break
-            detectDis += 1
-        return detectDis, (detX, detY)
-
-    def checkObstacle(self):
-        if 0 < self.lidarDetectDis < 20:
-            self.startMove(False)
-
-    def checkCamEnemyDetect(self):
-        if self.robot is None or len(self.enemys) == 0: return
-        robotPos = self.robot.getCrtPos()
-        capturedEnmeyIdxList = []
-        degree = self.getRobotDirDegree()
-        degAClk = degree - self.camAngle
-        degClk =  degree + self.camAngle
-        for idx, enemyObj in enumerate(self.enemys):
-            enemyPos = enemyObj.getOrgPos()
-            x = int(enemyPos[0] - robotPos[0])
-            y = int(enemyPos[1] - robotPos[1])
-            degreeVal = int(180 - math.degrees(math.atan2(x, y)))
-            # Check enemy in the camera detection range
-            if degAClk <= degreeVal <=degClk:
-                dist = math.sqrt(x**2 + y**2)
-                if dist <= max(self.lidarDetectDis, max(self.camDetectDisL, self.camDetectDisR)):
-                #self.camDetectDisL and dist <= self.camDetectDisR and dist<=self.lidarDetectDis:
-                    capturedEnmeyIdxList.append(idx)
-        #print(capturedEnmeyIdxList)
-        
-        self.camEnemyDetIdxList = capturedEnmeyIdxList.copy()
 
     #-----------------------------------------------------------------------------
     def getSonarData(self):
@@ -561,7 +573,6 @@ class MapMgr(object):
     def getCamEnemyDetectList(self):
         return self.camEnemyDetIdxList
 
-    #-----------------------------------------------------------------------------
     def genRandomPred(self, ranRange=50):
         """ Generate enemy random prediction positions based on the input range."""
         for enemyObj in self.enemys:
@@ -572,11 +583,12 @@ class MapMgr(object):
 
     #-----------------------------------------------------------------------------
     def periodic(self):
+        """ Periodic update function."""
         if self.robot: 
             self.robot.updateCrtPos()
             self.updateSensorsDis()
             if self.sonaOn: self.calsonarData()
-            self.calcuSoundDir()
+            self.calSoundDir()
             if self.lidarOnflg: self.calLidarDetect()
             if self.obstacleAvdFlg: self.checkObstacle()
             if self.camOnFlg: self.calCameDetect()
@@ -584,11 +596,12 @@ class MapMgr(object):
                 
     #-----------------------------------------------------------------------------
     def updateSensorsDis(self):
-        
+        """ Update the sensor display data on the viewer control panel."""
         dirTuple = self.robot.getDirection()
         x = int(dirTuple[0])
         y = int(dirTuple[1])
-        degreeVal = int(180 - math.degrees(math.atan2(x, y))) # convert to degree
+        # convert to degree
+        degreeVal = int(180 - math.degrees(math.atan2(x, y)))
         self.robotDirDegree = degreeVal
         data = {
             'pos': str(self.robot.getCrtPos()),
@@ -600,11 +613,10 @@ class MapMgr(object):
             data['back'] = sonarData[1]
             data['left'] = sonarData[2]
             data['right'] = sonarData[3]
-              
         gv.iRWCtrlPanel.updateMovSensorsData(data)
 
     #-----------------------------------------------------------------------------
-    # robot control functions
+    # define all the set() functions
     def startMove(self, moveFlag):
         if self.robot: self.robot.setMoveFlag(moveFlag)
 
@@ -633,8 +645,7 @@ class MapMgr(object):
     def setRobotManualMove(self, moveFlag, dirStr):
         if self.robot:
             self.robot.setManualControl(moveFlag)
-            if moveFlag:
-                self.robot.setMoveDir(dirStr)
+            if moveFlag: self.robot.setMoveDir(dirStr)
 
     def resetBot(self):
         self.robot.resetCrtPos()
