@@ -73,12 +73,14 @@ CONFIG_DICT = iConfigLoader.getJson()
 
 #-------<GLOBAL VARIABLES (start with "g")>------------------------------------
 # VARIABLES are the built in data type.
-gBluePrintDir = os.path.join(dirpath,CONFIG_DICT['BP_DIR'])
+gTestMode = CONFIG_DICT['TEST_MD']
+gBluePrintDir = os.path.join(dirpath, CONFIG_DICT['BP_DIR'])
 gScenarioDir = os.path.join(dirpath, CONFIG_DICT['SC_DIR'])
 gBluePrintFilePath = None 
 gBluePrintBM = None
 gScaleImgFlg = CONFIG_DICT['SCALE_IMG']
 gHeatMapDir = CONFIG_DICT['HM_DIR']
+gHeatMapFile = os.path.join(gHeatMapDir, CONFIG_DICT['TEST_HM']) if 'TEST_HM' in CONFIG_DICT.keys() else None
 
 gTranspPct = 70     # Windows transparent percentage.
 gUpdateRate = 1     # main frame update rate 1 sec.

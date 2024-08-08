@@ -8,13 +8,14 @@
 # Test mode:
 # True: use the real word internal logic to simulator the control logic. 
 # False: connect to PLC let plc control the signals 
-TEST_MD:False
+TEST_MD:True
 
 # Init the building floor blue print directory
 BP_DIR:floorBluePrint
 
 # Init the prediction heat map directory
 HM_DIR:heatmap
+TEST_HM:
 
 # Scenario file directory
 SC_DIR:scenario

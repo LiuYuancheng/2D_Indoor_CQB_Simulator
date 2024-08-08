@@ -4,12 +4,12 @@
 # Name:        cqbSimuMapPanel.py
 #
 # Purpose:     This module is used to create different map panel to show the 
-#              viewer and editor.
+#              simulation viewer and scenario editor.
 #
 # Author:      Yuancheng Liu
 #
 # Created:     2024/07/30
-# Version:     v_0.1.1
+# Version:     v_0.1.3
 # Copyright:   Copyright (c) 2024 LiuYuancheng
 # License:     MIT License
 #-----------------------------------------------------------------------------
@@ -22,7 +22,7 @@ import cqbSimuGlobal as gv
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelRealworldMap(wx.Panel):
-    """ Viewer display map panel."""
+    """ Simulation viewer display map panel."""
     def __init__(self, parent, panelSize=(900, 600)):
         wx.Panel.__init__(self, parent, size=panelSize)
         self.bgColor = wx.Colour(200, 200, 200)
@@ -30,26 +30,29 @@ class PanelRealworldMap(wx.Panel):
         self.panelSize = panelSize
         self.toggle = False 
         self.bgBmp = None
-        self.heatMapBmp = wx.Bitmap(os.path.join(gv.gHeatMapDir, 'transparent_image.png'), wx.BITMAP_TYPE_ANY)
+        self.heatMapBmp = None
+        # Set the test heat map if under test mode
+        if gv.gTestMode and gv.gHeatMapFile and os.path.exists(gv.gHeatMapFile):
+            self.heatMapBmp = wx.Bitmap(gv.gHeatMapFile, wx.BITMAP_TYPE_ANY)
         # Init the display flags
-        self.showRouteFlg = False
-        self.showDetectFlg = True
-        self.showTrajectoryFlg = True
-        self.showEnemyFlg = True 
-        self.showPredictFlg = True
-        self.showHeatmap = False
-        self.showSonarFlg = False
-        self.showLidarFlg = True
-        self.showCamFlg = True
-        self.showCamDetect = True
-
+        self.showRouteFlg = False       # flag to show the pre set route on the map
+        self.showDetectFlg = True       # flag to show the robot detection area
+        self.showTrajectoryFlg = True   # flag to show the robot trajectory
+        self.showEnemyFlg = True        # flag to show the enemy actrual position
+        self.showPredictFlg = True      # flag to show the enemy predict position
+        self.showHeatmap = False        # flag to show the enemy possibility heat map 
+        self.showSonarFlg = False       # flag to show the sonar detection area
+        self.showLidarFlg = True        # flag to show the lidar detection area
+        self.showCamFlg = True          # flag to show the camera detection area
+        self.showCamDetect = True       # flag to show enemy detection 
+        # Pain the panel.
         self.Bind(wx.EVT_PAINT, self.onPaint)
         self.SetDoubleBuffered(True)
 
     #-----------------------------------------------------------------------------
     # define all the map draw function here.
     def _drawBackground(self, dc):
-        """Draw the background of the map."""
+        """ Draw the background, floor blue print and heat map on the map."""
         w, h = self.panelSize
         dc.SetBrush(wx.Brush(self.bgColor))
         dc.DrawRectangle(0, 0, w, h)
@@ -57,10 +60,10 @@ class PanelRealworldMap(wx.Panel):
             if gv.gScaleImgFlg:
                 dc.DrawBitmap(self._scaleBitmap(self.bgBmp, w, h), 0, 0)
             else:
-                x = (w - self.bgBmp.GetWidth()) / 2
-                y = (h - self.bgBmp.GetHeight()) / 2
+                x = int((w - self.bgBmp.GetWidth()) / 2)
+                y = int((h - self.bgBmp.GetHeight()) / 2)
                 dc.DrawBitmap(self.bgBmp, x, y)
-        if self.showHeatmap:
+        if self.showHeatmap and self.heatMapBmp:
             dc.DrawBitmap(self._scaleBitmap(self.heatMapBmp, w, h), 0, 0)
 
     #-----------------------------------------------------------------------------
@@ -73,7 +76,7 @@ class PanelRealworldMap(wx.Panel):
         robotObj = gv.iMapMgr.getRobot()
         if robotObj:
             pos = robotObj.getCrtPos()
-            # Draw the route
+            # Draw the route path
             if self.showRouteFlg:
                 waypts = robotObj.getRoutePts()
                 if len(waypts) > 1:
@@ -81,43 +84,36 @@ class PanelRealworldMap(wx.Panel):
                     dc.SetPen(pen)
                     dc.DrawLines(waypts)
                     for i, pt in enumerate(waypts):
-                        dc.DrawText("WP-%s %s" %
-                                    (str(i), str(pt)), pt[0]+3, pt[1]+3)
+                        dc.DrawText("WP-%s %s" %(str(i), str(pt)), pt[0]+3, pt[1]+3)
             # Draw trajectory
             if self.showTrajectoryFlg:
                 trajectory = robotObj.getTrajectory()
                 dc.SetPen(wx.Pen(wx.Colour("RED"), 2, style=wx.PENSTYLE_LONG_DASH))
                 dc.DrawLines(trajectory)
-
-            # Draw the sonar
+            # Draw the sonar env detection reflection lines.
             if self.showSonarFlg:
                 disVal = gv.iMapMgr.getSonarData()
                 if disVal:
                     color = wx.Colour(31, 156, 229) if self.toggle else wx.Colour('BLUE')
-                    pen = wx.Pen(color, 1, style=wx.PENSTYLE_LONG_DASH)
-                    dc.SetPen(pen)
+                    dc.SetPen(wx.Pen(color, 1, style=wx.PENSTYLE_LONG_DASH))
                     f, b, l, r = gv.iMapMgr.getSonarData()
                     dc.DrawLine(pos[0], pos[1], pos[0], pos[1]-f)
                     dc.DrawLine(pos[0], pos[1], pos[0]-l, pos[1])
                     dc.DrawLine(pos[0], pos[1], pos[0], pos[1]+b)
                     dc.DrawLine(pos[0], pos[1], pos[0]+r, pos[1])
-
-            # Draw the lidar 
+            # Draw the front lidar detection line and point.
             if self.showLidarFlg:
                 lidarData = gv.iMapMgr.getLidarData()
-                #print(lidarData)
                 if lidarData:
                     lidarDis = lidarData[0]
                     lidarPt = lidarData[1]
                     if lidarDis > 0 and lidarPt:
                         pen = wx.Pen(wx.Colour(169, 167, 12), 1) if self.toggle else wx.Pen(wx.Colour(127, 31, 31), 1, style=wx.PENSTYLE_LONG_DASH)
-                        #pen = wx.Pen(wx.Colour(169, 167, 12), 1, style=wx.PENSTYLE_LONG_DASH)
                         dc.SetPen(pen)
                         dc.DrawLine(pos[0], pos[1], lidarPt[0], lidarPt[1])
                         dc.SetBrush(wx.Brush(wx.Colour(127, 31, 31)))
                         dc.DrawCircle(lidarPt[0], lidarPt[1], 3)
-
-        # Draw the camera     
+            # Draw the camera viewer lines.
             if self.showCamFlg:
                 camData = gv.iMapMgr.getCamData()
                 if camData:
@@ -130,8 +126,7 @@ class PanelRealworldMap(wx.Panel):
                         dc.DrawLine(pos[0], pos[1], leftPt[0], leftPt[1])
                     if rightDis > 0 and rightPt:
                         dc.DrawLine(pos[0], pos[1], rightPt[0], rightPt[1])
-
-                    # Show enemy detection
+                    # Show enemy detection in the camera view sector
                     if self.showCamDetect:
                         dc.SetPen(wx.Pen(wx.Colour('RED'), 2))
                         enemies = gv.iMapMgr.getEnemy()
@@ -141,20 +136,18 @@ class PanelRealworldMap(wx.Panel):
                                 enemyObj = enemies[idx]
                                 enemyPos = enemyObj.getOrgPos()
                                 dc.DrawLine(pos[0], pos[1], enemyPos[0], enemyPos[1])
-
-            # Draw robot and transparent enemy detection area.
+            # Draw robot transparent enemy detection area.
             if self.showDetectFlg:
                 dc.SetPen(wx.Pen(wx.Colour(157, 204, 149), 1, style=wx.PENSTYLE_LONG_DASH))
                 color = wx.Colour(157, 204, 149, 128) if self.toggle else wx.Colour(157, 204, 149, 20)
                 gdc.SetBrush(wx.Brush(color))  
                 gdc.DrawEllipse(pos[0]-40, pos[1]-40, 80, 80)
+            # Draw the robot
             robotColor = wx.Colour("GREEN") if self.toggle else wx.Colour(67, 138, 85)
             dc.SetBrush(wx.Brush(robotColor))
             dc.SetPen(self.defaultPen)
             dc.DrawCircle(pos[0], pos[1], 8)
-        
-
-        # drow the enemies
+        # drow the enemies actual pos
         if self.showEnemyFlg:
             dc.SetPen(self.defaultPen)
             dc.SetBrush(wx.Brush(wx.Colour("RED")))
@@ -164,7 +157,6 @@ class PanelRealworldMap(wx.Panel):
                 dc.DrawCircle(pos[0], pos[1], 8)
                 dc.SetTextForeground(wx.Colour("RED"))
                 dc.DrawText("E-%s %s" %(str(enemyObj.getID()), str(pos)), pos[0]+8, pos[1]+8)
-        
         # Draw the enemy predict pos
         if self.showPredictFlg:
             dc.SetPen(self.defaultPen)
@@ -181,10 +173,8 @@ class PanelRealworldMap(wx.Panel):
     #-----------------------------------------------------------------------------
     def _scaleBitmap(self, bitmap, width, height):
         """ Resize a input bitmap.(bitmap-> image -> resize image -> bitmap)"""
-        #image = wx.ImageFromBitmap(bitmap) # used below 2.7
         image = bitmap.ConvertToImage()
         image = image.Scale(width, height, wx.IMAGE_QUALITY_HIGH)
-        #result = wx.BitmapFromImage(image) # used below 2.7
         result = wx.Bitmap(image, depth=wx.BITMAP_SCREEN_DEPTH)
         return result
 
@@ -244,7 +234,7 @@ class PanelRealworldMap(wx.Panel):
 #-----------------------------------------------------------------------------        
 #-----------------------------------------------------------------------------
 class PanelEditorMap(wx.Panel):
-    """ Editor display map panel."""
+    """ Scenario editor map panel."""
     def __init__(self, parent, panelSize=(900, 600)):
         wx.Panel.__init__(self, parent, size=panelSize)
         self.bgColor = wx.Colour(30, 40, 62)
@@ -287,10 +277,10 @@ class PanelEditorMap(wx.Panel):
             if gv.gScaleImgFlg:
                 dc.DrawBitmap(self._scaleBitmap(self.bgBmp, w, h), 0, 0)
             else:
-                x = (w - self.bgBmp.GetWidth()) / 2
-                y = (h - self.bgBmp.GetHeight()) / 2
+                x = int((w - self.bgBmp.GetWidth()) / 2)
+                y = int((h - self.bgBmp.GetHeight()) / 2)
                 dc.DrawBitmap(self.bgBmp, x, y)
-        # Draw the grid.
+        # Draw the grid coordinate.
         dc.SetPen(wx.Pen(wx.Colour(67, 138, 85), 1, style=wx.PENSTYLE_LONG_DASH))
         dc.SetTextForeground(wx.Colour(67, 138, 85))
         for i in range(0, w, 50):
@@ -308,6 +298,7 @@ class PanelEditorMap(wx.Panel):
         robotObj = gv.iMapMgr.getRobot()
         if robotObj:
             pos = robotObj.getOrgPos()
+            # draw the selected highlight cycle.
             if robotObj.getSelected():
                 dc.SetBrush(wx.Brush(wx.Colour("BLUE")))
                 dc.DrawCircle(pos[0], pos[1], 12)
@@ -344,13 +335,14 @@ class PanelEditorMap(wx.Panel):
         self._drawBG(dc)
         self._drawItems(dc)
 
-    #--PanelEditorMap--------------------------------------------------------------------
     def enableWPInfo(self, flag):
         self.showWPIdx = flag
 
     def enableAddWaypt(self, flag):
         self.addWaypt = flag
 
+    #--PanelEditorMap--------------------------------------------------------------------
+    # define all the event handling function here
     def onMouseMove(self, event):
         scrnPt = event.GetPosition()
         value = (scrnPt[0], scrnPt[1])
@@ -359,10 +351,11 @@ class PanelEditorMap(wx.Panel):
     def onLeftDown(self, event):
         pos = event.GetPosition()
         wxPointTuple = pos.Get()
+        # Check whether user select item
         if gv.iMapMgr: gv.iMapMgr.checkSelected(wxPointTuple[0], wxPointTuple[1])
         robot = gv.iMapMgr.getRobot()
-        if self.addWaypt and robot:
-            robot.addWayPt([wxPointTuple[0], wxPointTuple[1]])
+        # Add a way point if user is planning route.
+        if self.addWaypt and robot: robot.addWayPt([wxPointTuple[0], wxPointTuple[1]])
         self.updateDisplay()
         gv.iEDCtrlPanel.updateMapInfo()
         
@@ -382,13 +375,12 @@ class PanelEditorMap(wx.Panel):
         self.updateDisplay()
         gv.iEDCtrlPanel.updateMapInfo()
 
-#--PanelImge--------------------------------------------------------------------
+    #--PanelEditorMap--------------------------------------------------------------------
     def updateBitmap(self, bitMap):
         """ Update the panel bitmap image."""
         if not bitMap: return
         self.bgBmp = bitMap
 
-#--PanelMap--------------------------------------------------------------------
     def updateDisplay(self, updateFlag=None):
         """ Set/Update the display: if called as updateDisplay() the function will 
             update the panel, if called as updateDisplay(updateFlag=?) the function
@@ -400,7 +392,7 @@ class PanelEditorMap(wx.Panel):
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelDetection(wx.Panel):
-    """ Viewer display map panel."""
+    """ Enemy sound direction detection display panel."""
     def __init__(self, parent, panelSize=(130, 130)):
         wx.Panel.__init__(self, parent, size=panelSize)
         self.bgColor = wx.Colour(0, 0, 0)
@@ -409,6 +401,7 @@ class PanelDetection(wx.Panel):
         self.Bind(wx.EVT_PAINT, self.onPaint)
         self.SetDoubleBuffered(True)
 
+    #-----------------------------------------------------------------------------
     def onPaint(self, evt):
         """ Draw the map on the panel."""
         dc = wx.PaintDC(self)
@@ -451,6 +444,7 @@ class PanelDetection(wx.Panel):
                 dc.DrawLine(65, 65, x, y)
                 dc.DrawText(str(int(soundDeg)), x+5, y-5)
 
+    #-----------------------------------------------------------------------------
     def updateDisplay(self, updateFlag=None):
         """ Set/Update the display: if called as updateDisplay() the function will 
             update the panel, if called as updateDisplay(updateFlag=?) the function

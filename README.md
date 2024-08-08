@@ -2,11 +2,11 @@
 
 ![](doc/img/logFull.png)
 
-**Program Design Purpose**: 
+**Program Design Purpose**: The integration of robots in Close Quarters Battle (CQB) represents a significant advancement in modern military and law enforcement tactics. These robots, designed to navigate tight spaces, gather real-time intelligence, and engage threats, are invaluable assets in high-stakes scenarios. Our goal is to develop a 2D tactical board simulation system, similar to a computer game, that can load building floor blueprints, display CQB squad (robot) positions, enemy locations, and simulate CQB robot enemy search progress in the real world. This program will allow users (attack squad) to plan CQB robot enemy searching strategies and improve robot's enemy prediction within a controlled environment.
 
-The use of robots in Close Quarters Battle (CQB) is a significant advancement in modern military and law enforcement tactics. The CQB Robots, with their ability to navigate tight spaces, gather real-time intelligence, and even engage threats, have become valuable assets in these high-stakes scenarios. We want to build a 2D tactical board program (like a computer game) which can load the building floor blue print, CQB squad (robot) position, enemies position, enemy search path for simulating Close-quarters battle (CQB) robot's enemy searching strategy planning and prediction scenario. The tactical board UI is shown below:
+The main user interface of the simulation system is shown below:
 
-![](doc/img/screenshot01.png)
+![](doc/img/screenshot03.png)
 
 ```
 # Created:     2024/07/30
@@ -15,39 +15,45 @@ The use of robots in Close Quarters Battle (CQB) is a significant advancement in
 # License:     MIT License
 ```
 
+**Table of Contents**
+
 [TOC]
 
 ------
 
 ### Introduction
 
-2D_Indoor_CQB_Robot_Simulation program will provide 2 main part: the CQB scenario tactical board Editor and the situation simulation viewer. The tactical board editor is used for building a CQB scenario and situation viewer is used to simulate how the CQB robot use its sensors to do combine environment visualization, enemy search and prediction in physical word.  
+Robots are employed in Close Quarters Battle (CQB) to minimize the risks faced by human soldiers and officers by handling the most hazardous tasks. Equipped with advanced sensors, cameras, and communication systems, CQB robots provide operators with a comprehensive understanding of their environment. Their ability to navigate narrow corridors, stairwells, and cluttered rooms makes them ideal for urban combat and building searches. By relaying live video and audio feeds back to the control center, these robots enable real-time decision-making and seamless coordination with attack squads.
 
-#### CQB Scenario Tactical Board Editor
+Modern CQB robots are further enhanced by artificial intelligence (AI) and machine learning algorithms, which boost their autonomous capabilities. These technologies allow robots to recognize and respond to threats, navigate complex environments, and communicate effectively with both robotic and human team members.
 
-In the editor, the user can build a CQB scenario with below steps:
+The **2D Indoor CQB Robot Simulation** program is a simulation tool designed to configure various CQB scenarios, aiding in the improvement of the robot's autopilot, enemy search, and prediction algorithms. The program consists of two main components: the **CQB Scenario Tactical Board Editor** and the **Situation Simulation Viewer**. The Tactical Board Editor allows users to create and configure CQB scenarios, while the Situation Simulation Viewer simulates how the CQB robot utilizes its sensors for environmental visualization, enemy search, and prediction in real-world situations.
 
-- Step1: load the build indoor blue print in the editor to build the floor plan matrix.
-- Step2: Plan the robot start position, then set the robot auto pilot and enemy search path.
-- Step3: Adjust the robot motion and detection parameters such as the move speed, sensitivity and detection range of sensors. 
-- Step4: Plant the enemy location and enemy's movement strategy (stationary, patrol or random wondering)
+#### CQB Scenario Tactical Board Editor Introduction 
 
-After the user config a CQB scenario, then can also save the scenario in file and load it next time when they want to use it.
+The CQB Scenario Tactical Board Editor allows users to create and configure CQB scenarios with the following steps:
 
-#### CQB situation simulation viewer
+- **Step 1**: Load the building's indoor blueprint into the editor to generate the floor map matrix.
+- **Step 2**: Set the robot's starting position, then define its autopilot route and enemy search path.
+- **Step 3**: Adjust the robot's motion and detection parameters, such as movement speed, sensor sensitivity, and detection range.
+- **Step 4**: Place enemies within the scenario and define their movement strategy (e.g., stationary, patrolling, or random wandering).
 
-The viewer will simulate the real world situation when robot follow the use's auto enemy search path. The viewer provide the robot auto pilot and user manual control to simulate different operation situation. The viewer will generate all the related real time robot sensor data based on the floor blue print and the enemy config such as 
+After finished configuring a CQB scenario, users can save the scenario to a file for future use, allowing them to load and modify it as needed.
 
-- Robot sonar detect the wall reflection to calculate the distance between the robot and the wall, 
-- Robot front Lidar detect a glass door which robot can not pass, 
-- Robot 360' microphones array to identify enemy possible position based on the enemy sound, 
-- Robot Electro optical camera detect a enemy behind a glass door from visual analysis. 
+#### CQB Situation Simulation Viewer Introduction
 
-The viewer will also visualize the robot's enemy prediction result and during the simulation progress, user can stepping through forward and backward the progress to improve the enemy search path. 
+The Situation Simulation Viewer replicates real-world conditions as the robot follows the defined enemy search path. The viewer supports both autonomous robot operation and manual control, enabling users to simulate different operational scenarios. It generates real-time sensor data based on the floor blueprint and enemy configuration, such as:
+
+- Sonar detecting wall reflections to calculate the distance between the robot and the building walls.
+- Front LIDAR identifying obstacles like glass doors and furniture that the robot cannot pass.
+- A 360-degree microphones array pinpointing potential enemy positions based on sound.
+- Electro-optical cameras detecting enemies behind glass doors through visual analysis.
+
+The viewer also visualizes the robot's enemy prediction results. During the simulation, users can step forward or backward through the scenario to refine the enemy search path and improve the robot's performance.
 
 #### Use Case and Future Work
 
-In the future, we also want to integrate AI in the enemy strategy config part to make the enemy's action and interactivities with the environment more like "Human". Then we also want to use the program to train AI to improve the enemy predication and train AI to find the best enemy search path then may be able to apply in the computer game or even provide help for real world CQB combat decision making.
+In the future, we plan to integrate AI into the enemy strategy configuration, making enemy actions and interactions with the environment more realistic and "human-like." Additionally, we aim to use this program to train AI models to enhance enemy prediction and optimize search paths. This could have applications in computer games or even real-world CQB combat decision-making.
 
 
 
@@ -55,7 +61,7 @@ In the future, we also want to integrate AI in the enemy strategy config part to
 
 ### System Design 
 
-The program includes several sub system, in this section will introduce some key feature and how we design the sub systems. 
+The program includes several sub system, in this section will introduce some key feature and how we design the sub systems. such as the CQB Environment simulation design, CQB Robot Sensor's Simulation Design, Design of enemy detection and the prediction algorithm design. 
 
  
 

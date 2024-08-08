@@ -52,7 +52,7 @@ class UIFrame(wx.Frame):
         # Build the UI components.
         self._buildMenuBar()
         self.statusbar = self.CreateStatusBar(1)
-        self.statusbar.SetStatusText('Test mode: %s' %str(False))
+        self.statusbar.SetStatusText('Test mode: %s' %str(gv.gTestMode))
         # Build UI sizer
         self.SetSizer(self._buildUISizer())
         # Set the periodic call back
