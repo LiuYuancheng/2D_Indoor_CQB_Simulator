@@ -109,6 +109,10 @@ In our system our program will simulate 5 types of sensors used on the robot, th
 - **360' LF Sound Direction Detector**: Low frequency sound microphones array used to capture ambient sounds and the rough sounds source direction, such as footsteps, voices, or the noise of machinery. This audio data can be analyzed to identify potential threats or to determine the presence of people in nearby rooms or behind obstacles.
 - **Front LIDAR (Light Detection and Ranging)**: Measures distances by illuminating the target with laser light and measuring the reflection. LIDAR creates a 3D map of the environment, helping the robot navigate through tight spaces and avoid obstacles.
 
+The sensor usage and display map to the 2D scenario viewer is shown below:
+
+![](doc/img/rm08_sensorMap.png)
+
 The robot's enemy detection data processer integrates all the data from multiple sensors to create a comprehensive understanding of its environment. The enemy detection data processer will analysis the sensor fusion data and provide the square robot control member the confirmed enemy position and predicted enemy position for accuracy combine visual and decision making.
 
 
@@ -142,3 +146,6 @@ Then we can calculate the distance Y and Z, based on the Pos-1 we can calculate 
 
 
 
+------
+
+### System Setup
