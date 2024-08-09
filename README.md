@@ -10,7 +10,7 @@ The main user interface of the simulation system is shown below:
 
 ```
 # Created:     2024/07/30
-# Version:     v_0.1.1
+# Version:     v_0.1.2
 # Copyright:   Copyright (c) 2024 LiuYuancheng
 # License:     MIT License
 ```
@@ -61,97 +61,137 @@ In the future, we plan to integrate AI into the enemy strategy configuration, ma
 
 ### System Design 
 
-The program includes several sub system, in this section will introduce some key feature and how we design the sub systems. such as the CQB Environment simulation design, CQB Robot Sensor's Simulation Design, Design of enemy detection and the prediction algorithm design. 
+The program consists of several subsystems, each with key features that contribute to the overall simulation. This section introduces and details the design of these subsystems, including the CQB environment simulation, CQB robot sensor simulation, enemy detection, and prediction algorithm design.
 
- 
+#### CQB Environment Simulation Design 
 
-#### CQB Environment simulation design
+Before simulating the CQB robot's operations, it is essential to accurately build the environment from the building's floor blueprint. This enables the robot's sensors to "interact" with the environment as they would in the real world. This section explains how we construct the environment using the building blueprint and convert it into a map matrix through image visualization analysis. There are three main steps involved in this process:
 
-Before we start simulate the CQB robot, we need to build the environment from the building blue print picture then the robot's sensor can "interactive" with the environment as in the real world. This section will show how we build the environment from the building blue print, we will use the image visualization analysis to convert the blue print to a matrix map. There are 3 steps to build the blue print matrix
+##### Step 1: Establish the Floor Blueprint Coordinate System Using UWB Position Amplifiers
 
-**Step1: Build the Floor blue print coordinate system based on the UWB position amplifier** 
+Typically, the attack squad deploys three UWB (Ultra-Wideband) position amplifiers in a right-angled triangle configuration to cover the building area. We set the positions of these three UWB amplifiers as the origin (0,0), (max(x), 0), and (0, max(y)) of our blueprint matrix map. By scaling the loaded blueprint image to fit within this coordinate system, we ensure that the robot's location identification and the building environment are aligned within the same 2D coordinate system. The steps workflow is shown below:![](doc/img/rm03_coordinate.png)
 
-Normally the attack square will local 3 UWB position amplifier at a right-angled triangle area to cover the building, then we set the 3 UWB  amplifier's position as the (0,0), (max(x), 0) and (0, max(y))  of our blue print map matrix. Then based on the 3 UWB covered area, we change the loaded blue print picture's scale, then we filled the scaled blue print picture in the coordinate system so the robot self location identification and the building environment are in same 2D coordinate system. 
+This alignment allows for precise interaction between the robot's sensors and the simulated environment. 
 
- ![](doc/img/rm03_coordinate.png)
+##### Step 2: Construct the Indoor Environment Map Matrix
 
-**Step2: Build the Indoor environment matrix** 
-
-After change the blue print in the correct position and scale in the coordinate system, we will use CV to convert the floor blue print to a 2D matrix for the simulation usage. As shown below:
+Once the blueprint is correctly positioned and scaled within the coordinate system, we use computer vision (CV) techniques to convert the floor blueprint into a 2D matrix for simulation purposes, as illustrated below:
 
  ![](doc/img/rm04_mapmatrix.png)
 
-For the different element in the 2D matrix, the number will represent the material or the space (the material will be represented by a value in range 1 ~ 255). For example if the area is empty, the space in the map matrix will be filled with value 0 which also identify the robot can move in the area. If there is a glass door of a room, the door area will be filled will value 10 which identify the sonar sensor can not pass but the lidar and camera view can pass the material. The wall will be set to 255 then all the sensor's detection will not pass the area. 
+In this 2D matrix, different numerical values represent various materials or spaces within the environment (with material values ranging from 1 to 255). For example:
 
+- An empty space, where the robot can move freely, is represented by the value `0`.
+- A glass door, which sonar sensors cannot penetrate but LIDAR and cameras can, is represented by the value `10`.
+- A furniture which LIDAR can scan its shape and the sound can pass thought is represented by the value `100`.
+- A wall, which blocks all sensors and sound, is assigned the value `255`.
 
+This matrix format enables the simulation to distinguish between different types of obstacles and open areas, allowing for accurate robot-environment interaction.
 
-**Step3: Build the robot and environment interaction** 
+##### Step 3: Simulate Robot and Environment Interaction
 
-After build the environment matrix, we will build the interaction module to generate the robot sensor's interaction with the matrix to simulate the real world situation. The interaction example is shown below:
+After constructing the environment matrix, we develop an interaction module that simulates how the robot's sensors interact with the environment, mimicking real-world scenarios. An example of this interaction is shown below:
 
 ![](doc/img/rm05_sensorAct.png)
 
-When facing a area with the glass door, wood door(furniture)  and wall, the interaction manager module will floor the sensor's detection direction line from the robot position then check the "material" value one by one on the map matix follow the sensor's detection line. the distance will be calculate until it got the not able passed material value based on the sensors' setting. As shown in the example:
+When the robot encounters different elements like glass doors, wooden furniture, or walls, the interaction manager module traces the sensor’s detection line from the robot's position, checking the material values in the matrix along the sensor's path. The detection continues until it encounters a material value that the sensor cannot penetrate, based on its settings. For instance:
 
-- The movement sound sensor detection will stop until it reach a glass door (material_val = 10 )
+- **Movement sound sensors** stop detecting when they reach a glass door (material value = `10`).
+- **Camera and LIDAR sensors** can see through the glass door (material value = `10`) but are blocked by wooden furniture (material value = `100`).
+- **Sound detection sensors** can penetrate wooden doors (material value = `100`) but are halted by building walls (material value = `255`).
 
-- The camera and lidar detection line will pass the glass door  (material_val  = 10 ) but stop at the wood furniture (material_val = 100)
+This system allows for detailed and realistic simulation of sensor interactions, critical for testing and refining CQB robot strategies.
 
-- The sound detection line can pass the wood door (material_val = 100) but stop at the building wall (material_val = 255)
+#### CQB Robot Sensor Simulation Design
 
-  
+The sensor system in Close Quarters Battle (CQB) robots is critical for navigating, detecting threats, and providing real-time intelligence in confined and potentially hostile environments. Typically, a CQB robot is equipped with eight types of sensors:  `Optical Sensors`, `Thermal Imaging Sensors`, `Proximity and Obstacle Detection Sensors`, `Environmental Sensors`,  `Audio Sensors`, `Motion and Vibration Sensors`, `Communication and Signal Sensors` and `Multispectral and Hyperspectral Sensors`.  These sensors enable the robot to map the environment, identify potential dangers, and make informed decisions.
 
-#### CQB Robot Sensor's Simulation Design
-
-The sensor system in CQB (Close Quarters Battle) robots is crucial for their ability to navigate, detect threats, and provide real-time intelligence in confined and potentially hostile environments. Normally the CQB robot sensor will includes 8 types:  `Optical Sensors`, `Thermal Imaging Sensors`, `Proximity and Obstacle Detection Sensors`, `Environmental Sensors`,  `Audio Sensors`, `Motion and Vibration Sensors`, `Communication and Signal Sensors` and `Multispectral and Hyperspectral Sensors`.  These sensors enable the robot to perform a variety of tasks, from mapping the environment to identifying potential dangers. 
-
-In our system our program will simulate 5 types of sensors used on the robot, the sensors we want to simulate are shown below:
+In our system, we simulate five key types of sensors used on the robot, as shown below:
 
 ![](doc/img/sensors.png)
 
-- **Electro Optical Camera**:  Capture detailed visual data for navigation, threat identification, and situational awareness.
-- **UWB Indoor Position Sensor**: Ultra-Wideband (UWB) Positioning Senor for the robot to identify its' location in the building. 
-- **Environment Sonars**: Four sonar at the robot 4 direction (front, left, right, back) to detect the environment such as the distance from the robot to the wall. 
-- **360' LF Sound Direction Detector**: Low frequency sound microphones array used to capture ambient sounds and the rough sounds source direction, such as footsteps, voices, or the noise of machinery. This audio data can be analyzed to identify potential threats or to determine the presence of people in nearby rooms or behind obstacles.
-- **Front LIDAR (Light Detection and Ranging)**: Measures distances by illuminating the target with laser light and measuring the reflection. LIDAR creates a 3D map of the environment, helping the robot navigate through tight spaces and avoid obstacles.
+| Sensors Name                                  | Sensor Type                              | Description                                                  |
+| --------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| **Electro Optical Camera**                    | Optical Sensors                          | Capture detailed visual data for navigation, threat identification, and situational awareness. |
+| **UWB Indoor Position Sensor**                | Motion and Vibration Sensors             | Ultra-Wideband (UWB) positioning sensor that allows the robot to determine its location within the building. |
+| **Environment Sonars**                        | Environmental Sensors                    | Four sonars positioned around the robot (front, left, right, back) detect environmental features, such as the distance between the robot and surrounding walls. |
+| **360' LF Sound Direction Detector**          | Audio Sensors                            | An array of low-frequency sound microphones that capture ambient sounds and determine the general direction of sound sources, such as footsteps, voices, or machinery noises. This audio data helps identify potential threats or locate individuals in nearby rooms or behind obstacles. |
+| **Front LIDAR (Light Detection and Ranging)** | Proximity and Obstacle Detection Sensors | Measures distances by illuminating the target with laser light and measuring the reflection. LIDAR creates a 3D map of the environment, helping the robot navigate through tight spaces and avoid obstacles. |
 
-The sensor usage and display map to the 2D scenario viewer is shown below:
+The usage and display of these sensors in the 2D scenario viewer are illustrated below:
 
 ![](doc/img/rm08_sensorMap.png)
 
-The robot's enemy detection data processer integrates all the data from multiple sensors to create a comprehensive understanding of its environment. The enemy detection data processer will analysis the sensor fusion data and provide the square robot control member the confirmed enemy position and predicted enemy position for accuracy combine visual and decision making.
+The robot's enemy detection data processor integrates information from multiple sensors to form a comprehensive understanding of the environment. This processor analyzes sensor fusion data, providing the robot control team with both confirmed and predicted enemy positions, enhancing the accuracy of combine visual recognition and decision-making.
 
 
 
 #### Design of enemy detection and the prediction 
 
-We will simulate the enemy detection and predication progress in our system. 
+Our system simulates the process of enemy detection and prediction during the robot enemy searching progress. 
 
 **Detection Enemy Position**
 
-To detect the enemy position in the map matrix, we will use the camera and lidar sensors. The camera sensor will keep scan the front sector area of the robot the check whether can detect the enemy pixel. When the camera "see" then enemy, as camera has no ability to measure the distance it will send the enemy direction data to the detection data processer module, then the module will use the Lidar to scan the direction to get the object (enemy) distance. Based on the robot own position, enemy direction and  enemy distance, the processer will calculate the enemy location on the map. 
+To detect enemy positions on the map matrix, we utilize the camera and LIDAR sensors. The camera continuously scans the area in front of the robot to identify any enemy pixels. Once the camera detects an enemy, it sends the direction data to the detection data processor module. Since the camera cannot measure distance, the processor then instructs the LIDAR to scan in that direction to determine the distance to the detected object (enemy). Using the robot's own position, enemy direction, and distance data, the processor calculates the enemy's precise location on the map.
 
-The enemy detection work flow is shown below:
+The workflow for enemy detection is illustrated below:
 
 ![](doc/img/rm06_enemyDect.png)
 
 **Predict Enemy Position**
 
-To predict the enemy position, we use the 360' Low frequency sound microphones array. The sound sensor will get the direction of the sound source, when the robot is moving, based on the trajectory recording and the enemy sound source direction data, the enemy data processer will calculate the approximate predicted position of the enemy behind the obstacles. The enemy prediction workflow is shown below:
+To predict the enemy’s position, we use the 360° low-frequency sound microphone array. This audio sensor captures the direction of the sound source. As the robot moves, the system records its trajectory and, combined with the sound source direction data, the enemy data processor estimates the enemy's approximate position, even if they are behind obstacles.
+
+The enemy prediction workflow is shown below:
 
  ![](doc/img/rm07_enemyPred.png)
 
-During the predication calculation progress, We have the robot trajectory distance(X) from Time-T0 to Time-T1, the enemy sound direction(a) at Time-T0 with the robot position Pos-0  and the enemy sound direction(b) at Time-T1 with the robot position Pos-1.
+During the prediction calculation process, we have the robot's trajectory distance (X) from Time-T0 to Time-T1, the enemy sound direction angle (a) at Time-T0 relative to the robot's position (Pos-0), and the enemy sound direction angle (b) at Time-T1 relative to the robot's position (Pos-1).
 
 ```
 tan(a) = Z/(X+Y)
 tan(b) = Z/Y
 ```
 
-Then we can calculate the distance Y and Z, based on the Pos-1 we can calculate the enemy predication position.   
+Using these equations, we calculate distances Y and Z. With the data from Pos-1, we can determine the enemy’s predicted position.
 
 
 
 ------
 
 ### System Setup
+
+##### Development Environment
+
+- python 3.7.2rc2+ 64bit [ Windows11 ]
+
+##### Additional Lib/Software Need
+
+- **wxPython** :  https://wxpython.org/index.html , install : `pip install wxPython`
+- **Pillow Python Imaging Library** : https://pypi.org/project/pillow/, install : `pip install pillow`
+- **OpenCV** : https://opencv.org/get-started/, install: `pip install opencv-python`
+
+##### Hardware Needed : None
+
+##### Program Files List 
+
+| Folder             | Program File        | Execution Env | Description                                                  |
+| ------------------ | ------------------- | ------------- | ------------------------------------------------------------ |
+| src/floorBluePrint | *.png, *.jpg, *.bmp |               | All the floor blue print image files example.                |
+| src/heatmap        | *.png               |               | The enemy predication possibility transparent heat map image file. |
+| src/img            | *.png               |               | The image file used by the program.                          |
+| src/lib            | ConfigLoader.py     | python 3.7 +  | Configuration file read and write library module.            |
+| src/lib            | Log.py              | python 3.7 +  | Customized log recording library module.                     |
+| src/scenario       | *.json              | JSON          | Scenario record files.                                       |
+| src                | 2DCQBSimuRun.py     | python 3.7 +  | The 2D CQB robot simulation program main execution program.  |
+| src                | Config_template.txt |               | The program configure file template                          |
+| src                | cqbSimuGlobal.py    | python 3.7 +  | Module to set constants,  global parameters which will be used in the other modules. |
+| src                | cqbSimuMapMgr.py    | python 3.7 +  | UI map component management module.                          |
+| src                | cqbSimuMapPanel.py  | python 3.7 +  | This module is used to create different map panel to show the  simulation viewer and scenario editor. |
+| src                | cqbSimuPanel.py     | python 3.7 +  | This module is used to create different function panels which can  handle user's interaction (such as parameters adjustment) for the CQB robot simulation program. |
+
+
+
+------
+
+### Program Execution and Usage

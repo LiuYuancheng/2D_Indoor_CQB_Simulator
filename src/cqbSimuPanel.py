@@ -3,7 +3,7 @@
 # Name:        cqbSimuPanel.py
 #
 # Purpose:     This module is used to create different function panels which can 
-#              handle user's interaction (such as paramters adjustment) for the 
+#              handle user's interaction (such as parameters adjustment) for the 
 #              CQB robot simulation program.
 #
 # Author:      Yuancheng Liu
